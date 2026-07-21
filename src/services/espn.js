@@ -129,11 +129,17 @@ export async function fetchViewerDay(v, { signal, now = new Date(), tz } = {}) {
   const tKey = todayKey(tz, now)
   const today = all.filter((g) => dayKey(g.tip, tz) === tKey)
   const live = today.filter((g) => g.state === 'in').length
+  // Yesterday in the USER'S calendar, not UTC — derived from today's key so a late tip
+  // that crossed midnight in their zone lands on the day they experienced it.
+  const yd = new Date(`${tKey}T12:00:00Z`)
+  yd.setUTCDate(yd.getUTCDate() - 1)
+  const yKey = yd.toISOString().slice(0, 10)
+  const yesterday = all.filter((g) => dayKey(g.tip, tz) === yKey)
   // Every not-yet-started game in the window, soonest first. `next` is the first of these;
   // the watch filter re-derives its own next from this list after dropping unwatchable games.
   const upcoming = all.filter((g) => g.state === 'pre' && new Date(g.tip).getTime() > now.getTime())
 
-  return { id: v.id, ok: anyOk, today, live, upcoming, next: upcoming[0] || null }
+  return { id: v.id, ok: anyOk, today, live, yesterday, upcoming, next: upcoming[0] || null }
 }
 
 // Load every viewer at once. One slow/failed feed never blocks the rest.
@@ -142,6 +148,6 @@ export async function fetchAllViewers(viewers, opts = {}) {
   return settled.map((r, i) =>
     r.status === 'fulfilled'
       ? r.value
-      : { id: viewers[i].id, ok: false, today: [], live: 0, upcoming: [], next: null }
+      : { id: viewers[i].id, ok: false, today: [], live: 0, yesterday: [], upcoming: [], next: null }
   )
 }

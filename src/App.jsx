@@ -10,8 +10,9 @@ import InstallShelf from './components/InstallShelf.jsx'
 import ServicesPicker from './components/ServicesPicker.jsx'
 import SportsPicker from './components/SportsPicker.jsx'
 import UpcomingSchedule from './components/UpcomingSchedule.jsx'
+import YesterdayRecap from './components/YesterdayRecap.jsx'
 
-const EMPTY_FEED = (id) => ({ id, ok: false, today: [], live: 0, upcoming: [], next: null })
+const EMPTY_FEED = (id) => ({ id, ok: false, today: [], live: 0, yesterday: [], upcoming: [], next: null })
 
 const loadJson = (key, fallback) => {
   try {
@@ -219,6 +220,8 @@ export default function App() {
           />
         ))}
       </section>
+
+      <YesterdayRecap feeds={visibleFeeds} tz={tz} />
 
       <UpcomingSchedule feeds={visibleFeeds} tz={tz} filtered={filterActive} />
 

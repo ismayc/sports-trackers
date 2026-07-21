@@ -31,6 +31,10 @@ parts, not UTC), and renders:
 - a **My teams playing today** section — star any team in the listings and the hub tracks
   it in *its own* `localStorage` (`st:follow`), then deep-links matches into their viewer
   with `?teams=ABBR`;
+- a **Yesterday** recap — collapsed by default (the page's job is what's on now):
+  yesterday's finals with scores across the visible viewers, one press away. Follows the
+  sports picker but not the services filter — a result isn't hidden because you lack the
+  channel;
 - a **Next two weeks** breakdown — every upcoming game across the visible viewers,
   grouped by day, tagged with the sport it comes from, each row linking into its viewer.
   It respects both selections below, so it always agrees with the cards;

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!--
+    Flat fills only. ImageMagick bakes any fill that references a gradient via url(#id) to
+    pure black, so the PNGs generated from this file would ship black if we used one here.
+    See docs/ICONS.md in sports-viewer-meta. The mark is deliberately abstract (not the
+    sport emojis, which rasterize black in the emoji font) — a 3x3 grid of "game" dots with
+    a lit diagonal, reading as "which of the family have something on today."
+  -->
+  <rect width="512" height="512" fill="#12151c" />
+  <!-- dim (no games) dots -->
+  <circle cx="140" cy="140" r="44" fill="#2a3341" />
+  <circle cx="256" cy="140" r="44" fill="#2a3341" />
+  <circle cx="372" cy="256" r="44" fill="#2a3341" />
+  <circle cx="140" cy="372" r="44" fill="#2a3341" />
+  <circle cx="372" cy="372" r="44" fill="#2a3341" />
+  <!-- lit (games on) dots — the three ball colours of the family, on the diagonal -->
+  <circle cx="372" cy="140" r="44" fill="#6aa9ff" />
+  <circle cx="140" cy="256" r="44" fill="#ffb020" />
+  <circle cx="256" cy="372" r="44" fill="#3ddc84" />
+  <!-- centre "today" dot, larger and in the accent, ringed -->
+  <circle cx="256" cy="256" r="60" fill="#12151c" />
+  <circle cx="256" cy="256" r="54" fill="#4fd1c5" />
+</svg>

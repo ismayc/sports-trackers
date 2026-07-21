@@ -43,9 +43,9 @@ parts, not UTC), and renders:
   streaming/TV services you actually have;
 - **spoiler-free mode** — the family's 🙈 toggle: matchups and Final/Live states stay,
   the numbers go (including yesterday's recap), persisted per device;
-- **matchup deep links** — every game row opens its viewer pre-filtered to that
-  matchup's team (`?team=ABBR`, the param all six viewers read; the followed side wins
-  when one is starred);
+- **game deep links** — every game row opens its viewer directly on that game's detail
+  (`?game=<espn id>`, read by all six viewers), with `&team=ABBR` riding along as the
+  fallback filter if the app's committed snapshot doesn't hold the game yet;
 - an **install & subscribe** shelf — Open links plus `webcal://` calendar subscriptions
   for the viewers that publish a Netlify `.ics` feed.
 

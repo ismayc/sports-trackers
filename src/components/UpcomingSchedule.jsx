@@ -3,17 +3,20 @@ import { useFollow } from '../context/follow.jsx'
 import { dayKey, todayKey, formatDate } from '../utils/time.js'
 import GameRow from './GameRow.jsx'
 
-// Deep link for one game: the viewers accept ?team=ABBR (single team), so opening a row
-// lands in the app pre-filtered to that matchup's team — the followed one if either side
-// is starred, else the home side. One more click there opens the game itself; no viewer
-// exposes a per-game URL (yet).
+// Deep link for one game. Every viewer reads ?game=<espn event id> and opens straight
+// onto that game's detail — the hub and the apps share ESPN's id space, so the row's id
+// is the app's id. ?team= rides along as the graceful fallback: if the app's committed
+// season doesn't hold the game (a snapshot older than the fixture), it still lands
+// pre-filtered to the matchup's team — the followed one if either side is starred,
+// else the home side.
 export function gameHref(v, viewerId, game, follow) {
   const pick =
     (game.homeAbbr && follow.isFollowed(viewerId, game.homeAbbr) && game.homeAbbr) ||
     (game.awayAbbr && follow.isFollowed(viewerId, game.awayAbbr) && game.awayAbbr) ||
     game.homeAbbr ||
     game.awayAbbr
-  return pick ? `${v.url}?team=${encodeURIComponent(pick)}` : v.url
+  const team = pick ? `&team=${encodeURIComponent(pick)}` : ''
+  return `${v.url}?game=${encodeURIComponent(game.id)}${team}`
 }
 
 // The two-week breakdown: every upcoming game across the visible viewers, bucketed by the

@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { viewerById } from '../data/viewers.js'
+import { useFollow } from '../context/follow.jsx'
 import { formatDate } from '../utils/time.js'
 import GameRow from './GameRow.jsx'
+import { gameHref } from './UpcomingSchedule.jsx'
 
 // A quick "what happened yesterday" across the visible viewers — collapsed by default,
 // since the page's job is what's on NOW; this is one press away, not front and center.
 // Rows reuse the two-week breakdown's layout and link into each viewer. `feeds` arrives
 // filtered by the sports picker; the services filter deliberately does NOT apply here —
 // hiding a final score because you lack the channel makes no sense for results.
-export default function YesterdayRecap({ feeds, tz }) {
+export default function YesterdayRecap({ feeds, tz, hideScores = false }) {
+  const follow = useFollow()
   const [open, setOpen] = useState(false)
 
   const items = []
@@ -43,8 +46,8 @@ export default function YesterdayRecap({ feeds, tz }) {
               <a
                 className="up-item"
                 key={`${viewerId}:${game.id}`}
-                href={v.url}
-                title={`Open ${v.name}`}
+                href={gameHref(v, viewerId, game, follow)}
+                title={`Open this matchup in ${v.name}`}
               >
                 <span className="up-sport">
                   <img
@@ -57,7 +60,7 @@ export default function YesterdayRecap({ feeds, tz }) {
                   {v.name}
                 </span>
                 <div className="up-row">
-                  <GameRow viewerId={viewerId} game={game} tz={tz} />
+                  <GameRow viewerId={viewerId} game={game} tz={tz} hideScores={hideScores} />
                 </div>
               </a>
             )

@@ -4,7 +4,7 @@ import { formatDayTime } from '../utils/time.js'
 // One viewer's card. The whole card is a link into the deployed viewer (same tab, per
 // spec). Inside: the phase badge, a live indicator, and either today's games or the next
 // upcoming one. `feed` is the normalized { ok, today, live, next } from services/espn.
-export default function ViewerCard({ viewer, feed, phase, tz, filtered = false }) {
+export default function ViewerCard({ viewer, feed, phase, tz, filtered = false, hideScores = false }) {
   const { today, live, next } = feed
   const hasToday = today.length > 0
   const net = next?.broadcast?.[0]
@@ -39,7 +39,7 @@ export default function ViewerCard({ viewer, feed, phase, tz, filtered = false }
             </div>
             <div className="rows">
               {today.map((g) => (
-                <GameRow key={g.id} viewerId={viewer.id} game={g} tz={tz} />
+                <GameRow key={g.id} viewerId={viewer.id} game={g} tz={tz} hideScores={hideScores} />
               ))}
             </div>
           </>

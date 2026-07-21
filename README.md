@@ -41,6 +41,11 @@ parts, not UTC), and renders:
 - **Sports** and **My services** pickers — choose which viewers to show, and optionally
   filter everything (cards, my-teams, the two-week breakdown) down to games on the
   streaming/TV services you actually have;
+- **spoiler-free mode** — the family's 🙈 toggle: matchups and Final/Live states stay,
+  the numbers go (including yesterday's recap), persisted per device;
+- **matchup deep links** — every game row opens its viewer pre-filtered to that
+  matchup's team (`?team=ABBR`, the param all six viewers read; the followed side wins
+  when one is starred);
 - an **install & subscribe** shelf — Open links plus `webcal://` calendar subscriptions
   for the viewers that publish a Netlify `.ics` feed.
 

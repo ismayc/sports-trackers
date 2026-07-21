@@ -1,6 +1,20 @@
 import { viewerById } from '../data/viewers.js'
+import { useFollow } from '../context/follow.jsx'
 import { dayKey, todayKey, formatDate } from '../utils/time.js'
 import GameRow from './GameRow.jsx'
+
+// Deep link for one game: the viewers accept ?team=ABBR (single team), so opening a row
+// lands in the app pre-filtered to that matchup's team — the followed one if either side
+// is starred, else the home side. One more click there opens the game itself; no viewer
+// exposes a per-game URL (yet).
+export function gameHref(v, viewerId, game, follow) {
+  const pick =
+    (game.homeAbbr && follow.isFollowed(viewerId, game.homeAbbr) && game.homeAbbr) ||
+    (game.awayAbbr && follow.isFollowed(viewerId, game.awayAbbr) && game.awayAbbr) ||
+    game.homeAbbr ||
+    game.awayAbbr
+  return pick ? `${v.url}?team=${encodeURIComponent(pick)}` : v.url
+}
 
 // The two-week breakdown: every upcoming game across the visible viewers, bucketed by the
 // user's calendar day, tagged with the sport it comes from. Each row links into its
@@ -8,6 +22,7 @@ import GameRow from './GameRow.jsx'
 // `feeds` arrives already filtered by the sports picker and the "on my services" toggle,
 // so this section always agrees with the cards above it.
 export default function UpcomingSchedule({ feeds, tz, filtered = false }) {
+  const follow = useFollow()
   const items = []
   for (const feed of feeds) {
     for (const g of feed.upcoming || []) items.push({ viewerId: feed.id, game: g })
@@ -55,8 +70,8 @@ export default function UpcomingSchedule({ feeds, tz, filtered = false }) {
                 <a
                   className="up-item"
                   key={`${viewerId}:${game.id}`}
-                  href={v.url}
-                  title={`Open ${v.name}`}
+                  href={gameHref(v, viewerId, game, follow)}
+                  title={`Open this matchup in ${v.name}`}
                 >
                   <span className="up-sport">
                     <img

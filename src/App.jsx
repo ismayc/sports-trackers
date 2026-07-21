@@ -62,6 +62,8 @@ export default function App() {
   const [sports, setSports] = useState(() => loadJson('st:sports', null))
   const [services, setServices] = useState(() => loadJson('st:services', []))
   const [watchOnly, setWatchOnly] = useState(() => loadJson('st:watchOnly', false))
+  // Spoiler-free mode, same idea as the viewers': matchups and states stay, numbers go.
+  const [hideScores, setHideScores] = useState(() => loadJson('st:hideScores', false))
   const [showPicker, setShowPicker] = useState(false)
   const [showSports, setShowSports] = useState(false)
 
@@ -87,6 +89,13 @@ export default function App() {
       /* private mode */
     }
   }, [watchOnly])
+  useEffect(() => {
+    try {
+      localStorage.setItem('st:hideScores', JSON.stringify(hideScores))
+    } catch {
+      /* private mode */
+    }
+  }, [hideScores])
 
   // Persist + apply the theme.
   useEffect(() => {
@@ -204,9 +213,17 @@ export default function App() {
             {filterActive ? '✓ ' : ''}On my services
           </button>
         )}
+        <button
+          className={`chip ${hideScores ? 'on' : ''}`}
+          onClick={() => setHideScores((v) => !v)}
+          aria-pressed={hideScores}
+          title="Spoiler-free mode — hide all scores"
+        >
+          {hideScores ? '🙈 Scores hidden' : '👁 Hide scores'}
+        </button>
       </div>
 
-      <MyTeams feeds={visibleFeeds} tz={tz} />
+      <MyTeams feeds={visibleFeeds} tz={tz} hideScores={hideScores} />
 
       <section className="grid">
         {cards.map(({ v, feed, phase }) => (
@@ -217,11 +234,12 @@ export default function App() {
             phase={phase}
             tz={tz}
             filtered={filterActive}
+            hideScores={hideScores}
           />
         ))}
       </section>
 
-      <YesterdayRecap feeds={visibleFeeds} tz={tz} />
+      <YesterdayRecap feeds={visibleFeeds} tz={tz} hideScores={hideScores} />
 
       <UpcomingSchedule feeds={visibleFeeds} tz={tz} filtered={filterActive} />
 

@@ -242,6 +242,13 @@ export default function App() {
           tracking. Part of the{' '}
           <a href="https://github.com/ismayc">ismayc</a> sports viewer family.
         </span>
+        <span className="dim">
+          Created by{' '}
+          <a href="https://chester.rbind.io" target="_blank" rel="noopener noreferrer">
+            Chester Ismay
+          </a>
+          .
+        </span>
       </footer>
     </div>
   )

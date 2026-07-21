@@ -392,6 +392,9 @@ h3 {
   padding-top: 16px;
   border-top: 1px solid var(--border);
   font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .foot a {
   color: var(--accent);

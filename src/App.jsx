@@ -3,11 +3,39 @@ import { VIEWERS } from './data/viewers.js'
 import { fetchAllViewers } from './services/espn.js'
 import { seasonPhase } from './utils/phase.js'
 import { detectTimezone } from './utils/time.js'
+import { isWatchable } from './utils/watch.js'
 import ViewerCard from './components/ViewerCard.jsx'
 import MyTeams from './components/MyTeams.jsx'
 import InstallShelf from './components/InstallShelf.jsx'
+import ServicesPicker from './components/ServicesPicker.jsx'
 
-const EMPTY_FEED = (id) => ({ id, ok: false, today: [], live: 0, next: null })
+const EMPTY_FEED = (id) => ({ id, ok: false, today: [], live: 0, upcoming: [], next: null })
+
+const loadJson = (key, fallback) => {
+  try {
+    const v = localStorage.getItem(key)
+    return v ? JSON.parse(v) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+// Drop every game a viewer can't watch on the chosen services, and re-derive the counts and
+// the "next up" from what's left. Returns the feed unchanged when the filter is off.
+function applyWatchFilter(feed, services, on) {
+  if (!on || !services.length) return feed
+  const keep = (g) => isWatchable(g.broadcast, services)
+  const today = feed.today.filter(keep)
+  const upcoming = (feed.upcoming || []).filter(keep)
+  return {
+    ...feed,
+    today,
+    upcoming,
+    live: today.filter((g) => g.state === 'in').length,
+    next: upcoming[0] || null,
+    watchFiltered: true,
+  }
+}
 
 // Card ordering: live first, then anything on today, then in-season/tournament, then
 // "starts soon", then offseason. Within a tier, name order keeps it stable.
@@ -25,6 +53,26 @@ export default function App() {
   const [feeds, setFeeds] = useState(() => VIEWERS.map((v) => EMPTY_FEED(v.id)))
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const now = useMemo(() => new Date(), [])
+
+  // "What can I watch" filter: the chosen services and whether the filter is engaged.
+  const [services, setServices] = useState(() => loadJson('st:services', []))
+  const [watchOnly, setWatchOnly] = useState(() => loadJson('st:watchOnly', false))
+  const [showPicker, setShowPicker] = useState(false)
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('st:services', JSON.stringify(services))
+    } catch {
+      /* private mode */
+    }
+  }, [services])
+  useEffect(() => {
+    try {
+      localStorage.setItem('st:watchOnly', JSON.stringify(watchOnly))
+    } catch {
+      /* private mode */
+    }
+  }, [watchOnly])
 
   // Persist + apply the theme.
   useEffect(() => {
@@ -48,7 +96,17 @@ export default function App() {
     return () => ctrl.abort()
   }, [now, tz])
 
-  const feedById = useMemo(() => Object.fromEntries(feeds.map((f) => [f.id, f])), [feeds])
+  // The filter is engaged only when it's on AND at least one service is chosen.
+  const filterActive = watchOnly && services.length > 0
+  const displayFeeds = useMemo(
+    () => feeds.map((f) => applyWatchFilter(f, services, filterActive)),
+    [feeds, services, filterActive]
+  )
+
+  const feedById = useMemo(
+    () => Object.fromEntries(displayFeeds.map((f) => [f.id, f])),
+    [displayFeeds]
+  )
 
   const cards = useMemo(() => {
     return VIEWERS.map((v) => {
@@ -64,8 +122,25 @@ export default function App() {
     )
   }, [feedById, now])
 
-  const totalToday = feeds.reduce((n, f) => n + f.today.length, 0)
-  const totalLive = feeds.reduce((n, f) => n + f.live, 0)
+  const totalToday = displayFeeds.reduce((n, f) => n + f.today.length, 0)
+  const totalLive = displayFeeds.reduce((n, f) => n + f.live, 0)
+  const totalUpcoming = displayFeeds.reduce((n, f) => n + (f.upcoming?.length || 0), 0)
+  const g = (n) => `${n} game${n === 1 ? '' : 's'}`
+
+  let summaryText
+  if (status === 'loading') summaryText = 'Checking every viewer…'
+  else if (status === 'error')
+    summaryText = 'Could not reach the scoreboard — showing season badges only.'
+  else if (filterActive) {
+    // Filtered to what the chosen services can watch.
+    if (totalLive > 0) summaryText = `${g(totalLive)} live now you can watch · ${totalToday} today on your services.`
+    else if (totalToday > 0) summaryText = `${g(totalToday)} today you can watch on your services.`
+    else if (totalUpcoming > 0)
+      summaryText = `Nothing on your services today — ${totalUpcoming} coming up in the next day.`
+    else summaryText = 'Nothing on your services in the next day.'
+  } else if (totalLive > 0) summaryText = `${g(totalLive)} live now · ${totalToday} today across the family.`
+  else if (totalToday > 0) summaryText = `${g(totalToday)} today across the family.`
+  else summaryText = 'No games today across the family — here is where each season stands.'
 
   return (
     <div className="app">
@@ -85,27 +160,49 @@ export default function App() {
       </header>
 
       <p className="summary">
-        {status === 'loading'
-          ? 'Checking every viewer…'
-          : status === 'error'
-            ? 'Could not reach the scoreboard — showing season badges only.'
-            : totalLive > 0
-              ? `${totalLive} game${totalLive === 1 ? '' : 's'} live now · ${totalToday} today across the family.`
-              : totalToday > 0
-                ? `${totalToday} game${totalToday === 1 ? '' : 's'} today across the family.`
-                : 'No games today across the family — here is where each season stands.'}{' '}
-        <span className="dim">Times in {tz.replace(/_/g, ' ')}.</span>
+        {summaryText} <span className="dim">Times in {tz.replace(/_/g, ' ')}.</span>
       </p>
 
-      <MyTeams feeds={feeds} tz={tz} />
+      <div className="controls">
+        <button className="chip" onClick={() => setShowPicker(true)}>
+          📺 {services.length ? `My services (${services.length})` : 'Choose my services'}
+        </button>
+        {services.length > 0 && (
+          <button
+            className={`chip ${filterActive ? 'on' : ''}`}
+            onClick={() => setWatchOnly((v) => !v)}
+            aria-pressed={filterActive}
+            title="Show only games on the services you have"
+          >
+            {filterActive ? '✓ ' : ''}On my services
+          </button>
+        )}
+      </div>
+
+      <MyTeams feeds={displayFeeds} tz={tz} />
 
       <section className="grid">
         {cards.map(({ v, feed, phase }) => (
-          <ViewerCard key={v.id} viewer={v} feed={feed} phase={phase} tz={tz} />
+          <ViewerCard
+            key={v.id}
+            viewer={v}
+            feed={feed}
+            phase={phase}
+            tz={tz}
+            filtered={filterActive}
+          />
         ))}
       </section>
 
       <InstallShelf />
+
+      {showPicker && (
+        <ServicesPicker
+          selected={services}
+          onChange={setServices}
+          onClose={() => setShowPicker(false)}
+        />
+      )}
 
       <footer className="foot">
         <span className="dim">

@@ -6,7 +6,8 @@ import { formatTime } from '../utils/time.js'
 // and inside the "My teams playing today" section.
 export default function GameRow({ viewerId, game, tz }) {
   const follow = useFollow()
-  const { away, home, awayAbbr, homeAbbr, score, state, statusLabel, tip } = game
+  const { away, home, awayAbbr, homeAbbr, score, state, statusLabel, tip, broadcast } = game
+  const net = broadcast?.[0]
 
   const pill =
     state === 'in' ? (
@@ -30,7 +31,10 @@ export default function GameRow({ viewerId, game, tz }) {
         </span>
         <TeamStar viewerId={viewerId} abbr={homeAbbr} label={home} follow={follow} />
       </div>
-      {pill}
+      <span className="row-right">
+        {net && <span className="row-net" title={broadcast.join(', ')}>{net}</span>}
+        {pill}
+      </span>
     </div>
   )
 }

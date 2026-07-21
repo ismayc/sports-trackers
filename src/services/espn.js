@@ -14,6 +14,21 @@ const BASE = 'https://site.api.espn.com/apis/site/v2/sports'
 const yyyymmdd = (d) =>
   `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`
 
+// National broadcast/stream names for a game. `broadcasts[].names` is the flat network
+// list; `geoBroadcasts[]` adds streamers and carries a market type — we keep National feeds
+// and streaming, and drop home/away RSNs (not universally available). Used by the "what can
+// I watch" filter (see utils/watch.js).
+function broadcastNames(c) {
+  const names = new Set()
+  for (const b of c.broadcasts || []) for (const n of b.names || []) names.add(n)
+  for (const gb of c.geoBroadcasts || []) {
+    const n = gb.media?.shortName
+    const nat = gb.market?.type === 'National' || gb.type?.shortName === 'Streaming'
+    if (n && nat) names.add(n)
+  }
+  return [...names]
+}
+
 // Normalize one ESPN event into the hub's flat game shape. Returns null for anything the
 // hub can't or shouldn't show (missing competitors, or — for college — a non-tournament
 // game that shares the seasontype=3 window).
@@ -54,6 +69,7 @@ function normalize(ev, v) {
     state: st.state || 'pre', // 'pre' | 'in' | 'post'
     score: hasScore ? [as, hs] : null, // [away, home] so it reads left-to-right as AWAY @ HOME
     statusLabel: st.shortDetail || st.detail || null, // "Q3 4:21", "Final", "7:00 PM"
+    broadcast: broadcastNames(c), // national networks/streamers, for the watch filter
   }
 }
 
@@ -95,17 +111,19 @@ export async function fetchViewerDay(v, { signal, now = new Date(), tz } = {}) {
   const tKey = todayKey(tz, now)
   const today = all.filter((g) => dayKey(g.tip, tz) === tKey)
   const live = today.filter((g) => g.state === 'in').length
-  // Soonest not-yet-started game in the window (may be later today or tomorrow). Only used
-  // by the card when there's nothing on today.
-  const next = all.find((g) => g.state === 'pre' && new Date(g.tip).getTime() > now.getTime()) || null
+  // Every not-yet-started game in the window, soonest first. `next` is the first of these;
+  // the watch filter re-derives its own next from this list after dropping unwatchable games.
+  const upcoming = all.filter((g) => g.state === 'pre' && new Date(g.tip).getTime() > now.getTime())
 
-  return { id: v.id, ok: anyOk, today, live, next }
+  return { id: v.id, ok: anyOk, today, live, upcoming, next: upcoming[0] || null }
 }
 
 // Load every viewer at once. One slow/failed feed never blocks the rest.
 export async function fetchAllViewers(viewers, opts = {}) {
   const settled = await Promise.allSettled(viewers.map((v) => fetchViewerDay(v, opts)))
   return settled.map((r, i) =>
-    r.status === 'fulfilled' ? r.value : { id: viewers[i].id, ok: false, today: [], live: 0, next: null }
+    r.status === 'fulfilled'
+      ? r.value
+      : { id: viewers[i].id, ok: false, today: [], live: 0, upcoming: [], next: null }
   )
 }

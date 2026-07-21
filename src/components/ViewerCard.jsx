@@ -4,9 +4,10 @@ import { formatDayTime } from '../utils/time.js'
 // One viewer's card. The whole card is a link into the deployed viewer (same tab, per
 // spec). Inside: the phase badge, a live indicator, and either today's games or the next
 // upcoming one. `feed` is the normalized { ok, today, live, next } from services/espn.
-export default function ViewerCard({ viewer, feed, phase, tz }) {
+export default function ViewerCard({ viewer, feed, phase, tz, filtered = false }) {
   const { today, live, next } = feed
   const hasToday = today.length > 0
+  const net = next?.broadcast?.[0]
 
   return (
     <a className="card" href={viewer.url}>
@@ -44,10 +45,14 @@ export default function ViewerCard({ viewer, feed, phase, tz }) {
           </>
         ) : next ? (
           <div className="card-next">
-            Next: {next.awayAbbr || next.away} @ {next.homeAbbr || next.home}, {formatDayTime(next.tip, tz)}
+            {filtered ? 'Next you can watch: ' : 'Next: '}
+            {next.awayAbbr || next.away} @ {next.homeAbbr || next.home}, {formatDayTime(next.tip, tz)}
+            {net && <span className="card-net">{net}</span>}
           </div>
         ) : (
-          <div className="card-next dim">No games in the next day</div>
+          <div className="card-next dim">
+            {filtered ? 'Nothing on your services in the next day' : 'No games in the next day'}
+          </div>
         )}
       </div>
     </a>

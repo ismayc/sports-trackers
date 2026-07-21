@@ -9,6 +9,7 @@ import MyTeams from './components/MyTeams.jsx'
 import InstallShelf from './components/InstallShelf.jsx'
 import ServicesPicker from './components/ServicesPicker.jsx'
 import SportsPicker from './components/SportsPicker.jsx'
+import UpcomingSchedule from './components/UpcomingSchedule.jsx'
 
 const EMPTY_FEED = (id) => ({ id, ok: false, today: [], live: 0, upcoming: [], next: null })
 
@@ -218,6 +219,8 @@ export default function App() {
           />
         ))}
       </section>
+
+      <UpcomingSchedule feeds={visibleFeeds} tz={tz} filtered={filterActive} />
 
       <InstallShelf viewers={visibleViewers} />
 

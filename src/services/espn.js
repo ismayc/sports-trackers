@@ -87,15 +87,18 @@ const shift = (base, off) => {
 
 export async function fetchViewerDay(v, { signal, now = new Date(), tz } = {}) {
   // Two kinds of query: three single days around now for an ACCURATE today bucket (each day
-  // is well under the scoreboard's silent event cap), plus one forward RANGE out to the
-  // horizon for the "next up" look-ahead. A single day → an exact count; a 14-day range →
-  // the soonest upcoming games (the cap only thins far-out days a dense league won't show
-  // as "next" anyway — the earliest games are always present).
+  // is well under the scoreboard's silent event cap), plus forward RANGES out to the
+  // horizon for the look-ahead. A range never drops its earliest games but thins the
+  // middle days of a dense league's window, so the horizon is split into two ~week ranges:
+  // each half's early days are exact, which keeps the two-week breakdown honest for
+  // NBA-density schedules at the cost of one extra request per viewer.
+  const mid = Math.ceil(HORIZON_DAYS / 2) + 1
   const queries = [
     yyyymmdd(shift(now, -1)),
     yyyymmdd(now),
     yyyymmdd(shift(now, 1)),
-    `${yyyymmdd(shift(now, 2))}-${yyyymmdd(shift(now, HORIZON_DAYS))}`,
+    `${yyyymmdd(shift(now, 2))}-${yyyymmdd(shift(now, mid))}`,
+    `${yyyymmdd(shift(now, mid + 1))}-${yyyymmdd(shift(now, HORIZON_DAYS))}`,
   ]
 
   // College viewers need the tournament bracket group + postseason type. Harmless for a

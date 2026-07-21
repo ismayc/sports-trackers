@@ -36,7 +36,9 @@ parts, not UTC), and renders:
   sports picker but not the services filter — a result isn't hidden because you lack the
   channel;
 - a **Next two weeks** breakdown — every upcoming game across the visible viewers,
-  grouped by day, tagged with the sport it comes from, each row linking into its viewer.
+  tagged with the sport it comes from, in the family's two presentations: a day-grouped
+  **Schedule** list and a calendar **Week** grid (Sunday-start weeks over the horizon,
+  today outlined, out-of-range days dimmed), toggled by tabs and remembered per device.
   It respects both selections below, so it always agrees with the cards;
 - **Sports** and **My services** pickers — choose which viewers to show, and optionally
   filter everything (cards, my-teams, the two-week breakdown) down to games on the

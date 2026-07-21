@@ -8,6 +8,7 @@ import ViewerCard from './components/ViewerCard.jsx'
 import MyTeams from './components/MyTeams.jsx'
 import InstallShelf from './components/InstallShelf.jsx'
 import ServicesPicker from './components/ServicesPicker.jsx'
+import SportsPicker from './components/SportsPicker.jsx'
 
 const EMPTY_FEED = (id) => ({ id, ok: false, today: [], live: 0, upcoming: [], next: null })
 
@@ -54,10 +55,21 @@ export default function App() {
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const now = useMemo(() => new Date(), [])
 
-  // "What can I watch" filter: the chosen services and whether the filter is engaged.
+  // Which viewers to show (null = all), and the "what can I watch" filter (chosen services
+  // + whether it's engaged).
+  const [sports, setSports] = useState(() => loadJson('st:sports', null))
   const [services, setServices] = useState(() => loadJson('st:services', []))
   const [watchOnly, setWatchOnly] = useState(() => loadJson('st:watchOnly', false))
   const [showPicker, setShowPicker] = useState(false)
+  const [showSports, setShowSports] = useState(false)
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('st:sports', JSON.stringify(sports))
+    } catch {
+      /* private mode */
+    }
+  }, [sports])
 
   useEffect(() => {
     try {
@@ -108,8 +120,18 @@ export default function App() {
     [displayFeeds]
   )
 
+  // The viewers the user has chosen to show (null = all).
+  const visibleViewers = useMemo(
+    () => (sports && sports.length ? VIEWERS.filter((v) => sports.includes(v.id)) : VIEWERS),
+    [sports]
+  )
+  const visibleFeeds = useMemo(() => {
+    const ids = new Set(visibleViewers.map((v) => v.id))
+    return displayFeeds.filter((f) => ids.has(f.id))
+  }, [displayFeeds, visibleViewers])
+
   const cards = useMemo(() => {
-    return VIEWERS.map((v) => {
+    return visibleViewers.map((v) => {
       const feed = feedById[v.id] || EMPTY_FEED(v.id)
       const phase = seasonPhase(v, { now, hasGames: feed.today.length > 0 || feed.live > 0 })
       return { v, feed, phase, rank: rankOf(feed, phase) }
@@ -120,11 +142,11 @@ export default function App() {
         (a.rank === 3 ? (a.phase.days ?? 0) - (b.phase.days ?? 0) : 0) ||
         a.v.name.localeCompare(b.v.name)
     )
-  }, [feedById, now])
+  }, [visibleViewers, feedById, now])
 
-  const totalToday = displayFeeds.reduce((n, f) => n + f.today.length, 0)
-  const totalLive = displayFeeds.reduce((n, f) => n + f.live, 0)
-  const totalUpcoming = displayFeeds.reduce((n, f) => n + (f.upcoming?.length || 0), 0)
+  const totalToday = visibleFeeds.reduce((n, f) => n + f.today.length, 0)
+  const totalLive = visibleFeeds.reduce((n, f) => n + f.live, 0)
+  const totalUpcoming = visibleFeeds.reduce((n, f) => n + (f.upcoming?.length || 0), 0)
   const g = (n) => `${n} game${n === 1 ? '' : 's'}`
 
   let summaryText
@@ -164,6 +186,9 @@ export default function App() {
       </p>
 
       <div className="controls">
+        <button className="chip" onClick={() => setShowSports(true)}>
+          🏅 {sports && sports.length ? `Sports (${visibleViewers.length})` : 'All sports'}
+        </button>
         <button className="chip" onClick={() => setShowPicker(true)}>
           📺 {services.length ? `My services (${services.length})` : 'Choose my services'}
         </button>
@@ -179,7 +204,7 @@ export default function App() {
         )}
       </div>
 
-      <MyTeams feeds={displayFeeds} tz={tz} />
+      <MyTeams feeds={visibleFeeds} tz={tz} />
 
       <section className="grid">
         {cards.map(({ v, feed, phase }) => (
@@ -194,8 +219,15 @@ export default function App() {
         ))}
       </section>
 
-      <InstallShelf />
+      <InstallShelf viewers={visibleViewers} />
 
+      {showSports && (
+        <SportsPicker
+          selected={sports}
+          onChange={setSports}
+          onClose={() => setShowSports(false)}
+        />
+      )}
       {showPicker && (
         <ServicesPicker
           selected={services}

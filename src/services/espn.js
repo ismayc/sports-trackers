@@ -76,12 +76,27 @@ function normalize(ev, v) {
 // Fetch one viewer's today window. Tolerant of per-day failures (allSettled): if one of
 // the three day-queries 404s or the feed is empty (an offseason viewer), the others still
 // resolve and we simply return fewer games. Never throws for a viewer being out of season.
+// Look-ahead horizon for "next up" / the watch filter: two weeks out.
+const HORIZON_DAYS = 14
+
+const shift = (base, off) => {
+  const x = new Date(base)
+  x.setUTCDate(x.getUTCDate() + off)
+  return x
+}
+
 export async function fetchViewerDay(v, { signal, now = new Date(), tz } = {}) {
-  const days = [-1, 0, 1].map((off) => {
-    const x = new Date(now)
-    x.setUTCDate(x.getUTCDate() + off)
-    return yyyymmdd(x)
-  })
+  // Two kinds of query: three single days around now for an ACCURATE today bucket (each day
+  // is well under the scoreboard's silent event cap), plus one forward RANGE out to the
+  // horizon for the "next up" look-ahead. A single day → an exact count; a 14-day range →
+  // the soonest upcoming games (the cap only thins far-out days a dense league won't show
+  // as "next" anyway — the earliest games are always present).
+  const queries = [
+    yyyymmdd(shift(now, -1)),
+    yyyymmdd(now),
+    yyyymmdd(shift(now, 1)),
+    `${yyyymmdd(shift(now, 2))}-${yyyymmdd(shift(now, HORIZON_DAYS))}`,
+  ]
 
   // College viewers need the tournament bracket group + postseason type. Harmless for a
   // non-tournament date (the feed just returns whatever seasontype=3 it has, then the
@@ -89,7 +104,7 @@ export async function fetchViewerDay(v, { signal, now = new Date(), tz } = {}) {
   const suffix = v.college ? '&groups=50&seasontype=3' : ''
 
   const results = await Promise.allSettled(
-    days.map(async (d) => {
+    queries.map(async (d) => {
       const res = await fetch(`${BASE}/${v.espnPath}/scoreboard?dates=${d}${suffix}`, { signal })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       return res.json()

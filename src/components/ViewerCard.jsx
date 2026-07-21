@@ -51,7 +51,9 @@ export default function ViewerCard({ viewer, feed, phase, tz, filtered = false }
           </div>
         ) : (
           <div className="card-next dim">
-            {filtered ? 'Nothing on your services in the next day' : 'No games in the next day'}
+            {filtered
+              ? 'Nothing on your services in the next two weeks'
+              : 'No games in the next two weeks'}
           </div>
         )}
       </div>

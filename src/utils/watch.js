@@ -48,6 +48,7 @@ export const SERVICE_CATALOG = [
   { key: 'netflix', label: 'Netflix', kind: 'stream', match: carries('Netflix') },
   { key: 'espnplus', label: 'ESPN+', kind: 'stream', match: carries('ESPN+') },
   { key: 'leaguepass', label: 'NBA / WNBA League Pass', kind: 'stream', match: carries('NBA League Pass', 'WNBA League Pass') },
+  { key: 'nbatv', label: 'NBA TV', kind: 'stream', match: carries(NBATV) },
   // Live-TV bundles, defined by the linear networks they carry.
   { key: 'youtubetv', label: 'YouTube TV', kind: 'bundle', match: carries(ALL_LINEAR) },
   { key: 'hulu', label: 'Hulu + Live TV', kind: 'bundle', match: carries(BROADCAST_NETS, ESPN, ESPN2, ESPNU, TNT, TBS, TRUTV, USA, NBATV, NFLNET) },

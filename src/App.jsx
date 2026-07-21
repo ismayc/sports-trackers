@@ -136,8 +136,8 @@ export default function App() {
     if (totalLive > 0) summaryText = `${g(totalLive)} live now you can watch · ${totalToday} today on your services.`
     else if (totalToday > 0) summaryText = `${g(totalToday)} today you can watch on your services.`
     else if (totalUpcoming > 0)
-      summaryText = `Nothing on your services today — ${totalUpcoming} coming up in the next day.`
-    else summaryText = 'Nothing on your services in the next day.'
+      summaryText = `Nothing on your services today — ${totalUpcoming} coming up in the next two weeks.`
+    else summaryText = 'Nothing on your services in the next two weeks.'
   } else if (totalLive > 0) summaryText = `${g(totalLive)} live now · ${totalToday} today across the family.`
   else if (totalToday > 0) summaryText = `${g(totalToday)} today across the family.`
   else summaryText = 'No games today across the family — here is where each season stands.'

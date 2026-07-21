@@ -34,8 +34,10 @@ export const todayKey = (tz, now = new Date()) => dayKey(now.toISOString(), tz)
 
 // "Fri 7:00pm" — one compact string for a next-up game.
 export function formatDayTime(iso, tz) {
-  const day = fmt(tz, { weekday: 'short' }).format(new Date(iso))
-  return `${day} ${formatTime(iso, tz).toLowerCase()}`
+  // Weekday + date, since "next up" can be up to two weeks out and a bare weekday would be
+  // ambiguous (which Wednesday?).
+  const day = fmt(tz, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(iso))
+  return `${day} · ${formatTime(iso, tz).toLowerCase()}`
 }
 
 // Coarse days-until for a month/day this year (or next year if it already passed). Used

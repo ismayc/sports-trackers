@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { VIEWERS } from './data/viewers.js'
 import { fetchAllViewers } from './services/espn.js'
 import { seasonPhase } from './utils/phase.js'
-import { detectTimezone } from './utils/time.js'
+import { detectTimezone, isValidZone, timezoneOptions } from './utils/time.js'
 import { isWatchable } from './utils/watch.js'
 import ViewerCard from './components/ViewerCard.jsx'
 import MyTeams from './components/MyTeams.jsx'
@@ -51,7 +51,22 @@ function rankOf(feed, phase) {
 }
 
 export default function App() {
-  const tz = useMemo(detectTimezone, [])
+  const detectedTz = useMemo(detectTimezone, [])
+  // Like the viewers: a shared link's ?tz= wins on load, then a saved choice, then the
+  // device zone. The hub writes no URL state, so the param is read-only here.
+  const [tz, setTz] = useState(() => {
+    const linked = new URLSearchParams(window.location.search).get('tz')
+    if (isValidZone(linked)) return linked
+    const saved = loadJson('st:tz', null)
+    return isValidZone(saved) ? saved : detectedTz
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem('st:tz', JSON.stringify(tz))
+    } catch {
+      /* private mode */
+    }
+  }, [tz])
   const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'dark')
   const [feeds, setFeeds] = useState(() => VIEWERS.map((v) => EMPTY_FEED(v.id)))
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
@@ -197,6 +212,17 @@ export default function App() {
       </p>
 
       <div className="controls">
+        <label className="chip chip-select">
+          <span aria-hidden="true">🕑</span>
+          <span className="sr-only">Timezone</span>
+          <select value={tz} onChange={(e) => setTz(e.target.value)}>
+            {timezoneOptions(tz).map((z) => (
+              <option key={z.id} value={z.id}>
+                {z.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <button className="chip" onClick={() => setShowSports(true)}>
           🏅 {sports && sports.length ? `Sports (${visibleViewers.length})` : 'All sports'}
         </button>

@@ -10,6 +10,39 @@ export const detectTimezone = () => {
   }
 }
 
+/** Validate against Intl rather than a hard-coded list, so any zone in a link works. */
+export function isValidZone(tz) {
+  if (!tz) return false
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz })
+    return true
+  } catch {
+    return false
+  }
+}
+
+// The zones worth one tap — same list the viewers offer. Cross-sport, so it leans US
+// (that's where six of the seven leagues play) with the family's international picks.
+export const TIMEZONES = [
+  { id: 'America/New_York', label: 'Eastern' },
+  { id: 'America/Chicago', label: 'Central' },
+  { id: 'America/Denver', label: 'Mountain' },
+  { id: 'America/Phoenix', label: 'Arizona' },
+  { id: 'America/Los_Angeles', label: 'Pacific' },
+  { id: 'America/Toronto', label: 'Toronto' },
+  { id: 'Europe/London', label: 'London' },
+  { id: 'Europe/Paris', label: 'Central Europe' },
+  { id: 'Australia/Sydney', label: 'Sydney' },
+  { id: 'UTC', label: 'UTC' },
+]
+
+export function timezoneOptions(current) {
+  const known = TIMEZONES.some((t) => t.id === current)
+  return known
+    ? TIMEZONES
+    : [{ id: current, label: current.split('/').pop().replace(/_/g, ' ') }, ...TIMEZONES]
+}
+
 const fmt = (tz, opts) => new Intl.DateTimeFormat('en-US', { timeZone: tz, ...opts })
 
 export function formatTime(iso, tz) {

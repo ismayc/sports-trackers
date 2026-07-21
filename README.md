@@ -45,6 +45,9 @@ parts, not UTC), and renders:
   streaming/TV services you actually have;
 - **spoiler-free mode** — the family's 🙈 toggle: matchups and Final/Live states stay,
   the numbers go (including yesterday's recap), persisted per device;
+- a **timezone picker** — the family's one-tap zone list; a shared link's `?tz=` wins
+  on load, then the saved choice, then the detected device zone. Every bucket (today,
+  yesterday, the two-week views) recomputes in the chosen zone;
 - **game deep links** — every game row opens its viewer directly on that game's detail
   (`?game=<espn id>`, read by all six viewers), with `&team=ABBR` riding along as the
   fallback filter if the app's committed snapshot doesn't hold the game yet;

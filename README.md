@@ -4,8 +4,10 @@ A one-page "home base" for Chester Ismay's family of sports viewers. It answers 
 question at a glance: **which of my sports have games today?** — and deep-links into each
 viewer for the details.
 
-It fronts six active viewers (a seventh, the World Cup, is disabled in
-`src/data/viewers.js` until the 2030 window approaches):
+It fronts six active viewers. Two more — the World Cup and the Euros — are
+commented out in `src/data/viewers.js`: both cover a completed tournament whose
+next edition is years away, so an enabled tile would read "Offseason" until then.
+Uncomment each as its window approaches.
 
 | Sport | Viewer | Season |
 |---|---|---|
@@ -16,6 +18,7 @@ It fronts six active viewers (a seventh, the World Cup, is disabled in
 | 🏀 Men's March Madness | [mens-march-madness](https://ismayc.github.io/mens-march-madness/) | mid-Mar–early-Apr |
 | 🏀 Women's March Madness | [womens-march-madness](https://ismayc.github.io/womens-march-madness/) | mid-Mar–early-Apr |
 | ⚽ World Cup *(dormant until 2030)* | [world-cup-viewer](https://ismayc.github.io/world-cup-viewer/) | quadrennial |
+| ⚽ Euros *(dormant until 2028)* | [football-euros-viewer](https://ismayc.github.io/football-euros-viewer/) | quadrennial |
 
 ## How it works
 
@@ -66,9 +69,9 @@ parts, not UTC), and renders:
   thins the middle days of a dense league's window, so the 14-day look-ahead is fetched
   as two ~week ranges instead of one (`services/espn.js`).
 - **Graceful offseason.** An empty or unreachable feed never throws — the card falls back
-  to its season-phase badge. The World Cup feed (`soccer/fifa.world`) is reachable but
-  returns matches only during the tournament; the rest of the four-year cycle it reads
-  "Offseason".
+  to its season-phase badge. The quadrennial feeds (`soccer/fifa.world`,
+  `soccer/uefa.euro`) are reachable but return matches only during the tournament; the
+  rest of the four-year cycle they read "Offseason".
 
 ## Develop
 

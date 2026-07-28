@@ -74,6 +74,21 @@ export const VIEWERS = [
   //   tournamentLabel: 'Tournament',
   //   window: { start: { m: 6, d: 11 }, end: { m: 7, d: 19 } },
   // },
+  // Euros — same situation as the World Cup above. The viewer covers the completed
+  // Euro 2024; the next tournament is June–July 2028, so an enabled tile would read
+  // "Offseason" until then. Uncomment when the 2028 window approaches and update the
+  // dates (the icon, public/icons/euros.png, and the viewer are ready either way).
+  // {
+  //   id: 'euros',
+  //   name: 'Euros',
+  //   emoji: '⚽',
+  //   espnPath: 'soccer/uefa.euro',
+  //   url: 'https://ismayc.github.io/football-euros-viewer/',
+  //   calendarHost: 'football-euros-viewer.netlify.app',
+  //   kind: 'tournament',
+  //   tournamentLabel: 'Tournament',
+  //   window: { start: { m: 6, d: 14 }, end: { m: 7, d: 14 } },
+  // },
   {
     id: 'mens-mm',
     name: "Men's March Madness",

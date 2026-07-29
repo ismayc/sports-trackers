@@ -1,20 +1,27 @@
-<svg data-favicon="transparent" xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Stadium">
-  <!-- Tab favicon: the app icon WITHOUT its dark ground, per the family favicon split.
-       The home-screen PNGs keep the ground. -->
-  <!--
-    The stadium is Google Noto Emoji's 🏟️ (U+1F3DF), Apache License 2.0 — the same mark the
-    portfolio uses to head the "Sports Viewers" family section, so the hub and the page that
-    sends people here now read as one thing.
-    Use the Noto SVG, never the emoji FONT: `magick label:"🏟️"` rasterizes flat black
-    (no colour-font support). Noto's shapes are filled paths/polygons with inline
-    style="fill:" and bake correctly. Flat fills only, no gradients: ImageMagick renders a
-    url(#id) gradient fill as pure black. See docs/ICONS.md in sports-viewer-meta.
-    scale(2.3), not the recipe's 2.7: this glyph inks 121x124 of its 128 box (almost the whole
-    canvas, unlike a round ball), so its DIAGONAL is what has to clear Android's circular
-    maskable crop. 2.3 puts it at 398px, inside the 410px safe circle; 2.7 would be 468.
-    Replaced the previous abstract 3x3 grid-of-dots mark.
-  -->
-  <g transform="translate(256,256) scale(2.3) translate(-64,-64)">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Source for og-image.png (the hub previously shipped the PNG with no committed source).
+       Regenerate with HEADLESS CHROME, not magick: there is no fontconfig font registered on
+       this machine and no rsvg-convert, so magick cannot rasterize the text elements at all
+       (it fails with `unable to read font`). The icons are pure shapes, which is why the
+       plain `magick -resize` line still works for those. Command (flags omitted here because
+       a double hyphen is illegal inside an XML comment, which is its own trap):
+         Chrome binary, headless, disable-gpu, hide-scrollbars,
+         force-device-scale-factor=1, window-size=1200,630,
+         screenshot=public/og-image.png, then the file:// URL of this SVG.
+       Chrome measures Arial wider than whatever produced the previous card: check the longest
+       line still clears the right edge after any copy change. -->
+  <defs>
+    <radialGradient id="bg" cx="85%" cy="-12%" r="100%">
+      <stop offset="0%" stop-color="#13322e"/>
+      <stop offset="58%" stop-color="#12151c"/>
+      <stop offset="100%" stop-color="#0d1016"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="12" fill="#4fd1c5"/>
+
+  <!-- Stadium: Google Noto Emoji (Apache License 2.0), the portfolio's family mark. -->
+  <g transform="translate(215,320) scale(2.45) translate(-64,-64)">
 <path style="fill:#546F7B;" d="M43.53,5.3c0-1.08,0.6-1.48,1.75-1.48S82.89,3.68,83.5,3.68c0.6,0,1.28,0.6,1.21,1.41
 	c-0.07,0.81,0.07,12.23,0,12.83c-0.07,0.6-0.4,1.28-1.28,1.34c-0.87,0.07-37.68,0.2-38.42,0.2s-1.34-0.87-1.41-1.68
 	S43.53,5.97,43.53,5.3z"/>
@@ -90,4 +97,9 @@
 	c10.07-0.16,12.99,9.1,12.99,12.1c0,3,0.17,18.89-0.2,19.38c-0.16,0.22-5.24,1.1-13.04,1.02C56.34,125.18,51.86,124.45,51.45,124.05
 	z"/>
   </g>
+
+  <text x="418" y="252" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="800" fill="#ffffff">Sports Trackers</text>
+  <text x="420" y="322" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700" fill="#4fd1c5">Which of your sports have games today</text>
+  <text x="420" y="392" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#9aa6b8">NBA &#183; NFL &#183; WNBA &#183; Premier League &#183; March Madness</text>
+  <text x="420" y="440" font-family="Arial, Helvetica, sans-serif" font-size="23" fill="#6f7a8b">Plus a shelf of completed tournament viewers</text>
 </svg>

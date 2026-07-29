@@ -24,14 +24,16 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm test
+      # Writes public/coverage.json (gitignored) so the deployed site serves the badge
+      # endpoint the README reads. Must run before the build that copies public/ into dist/.
+      - run: npm run coverage:badge
       - run: npm run build
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
-  # Deploys only from main, and only after the build succeeds. There are no tests to gate
-  # on here (the hub is a thin client over live feeds), and no Netlify/coverage — just
-  # build + GitHub Pages, per the simplified brief.
+  # Deploys only from main, and only after the tests and build succeed.
   deploy:
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'

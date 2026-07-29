@@ -32,9 +32,24 @@ function broadcastNames(c) {
 // Normalize one ESPN event into the hub's flat game shape. Returns null for anything the
 // hub can't or shouldn't show (missing competitors, or — for college — a non-tournament
 // game that shares the seasontype=3 window).
+// PRESEASON IS IGNORED BY CHOICE. ESPN stamps each event with its season type, and a plain
+// date query (every non-college viewer) happily returns exhibition games: on 2026-07-29 the
+// hub's two-week look-ahead surfaced the NFL Hall of Fame Game as "next up", which is not a
+// game that counts. `season.type` is 1 / slug 'preseason' for those.
+//
+// Drop ONLY type 1. Do not generalise this to "anything that isn't 2": 3 is the postseason
+// and 5 is the NBA play-in, both of which absolutely must show. And drop only when ESPN says
+// so explicitly — an event with no `season` block is kept, because hiding a real game is a
+// worse failure than showing an exhibition one.
+export function isPreseason(ev) {
+  const s = ev.season || {}
+  return s.type === 1 || s.slug === 'preseason'
+}
+
 function normalize(ev, v) {
   const c = ev.competitions?.[0]
   if (!c) return null
+  if (isPreseason(ev)) return null
 
   // March-Madness filter. The men's/women's college seasontype=3 window ALSO carries NIT,
   // College Basketball Crown, and WBIT games. The only reliable tell that a row belongs to

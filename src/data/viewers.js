@@ -1,6 +1,14 @@
-// The seven viewers this hub fronts. Everything the hub knows about a viewer lives here:
+// The viewers this hub fronts. Everything the hub knows about a viewer lives here:
 // how to reach its ESPN feed, where its deployed app is, its calendar (webcal) host, and
 // enough season-shape info to render a phase badge on a day with zero games.
+//
+// TWO LISTS, on purpose. `VIEWERS` is the LIVE set: the leagues and tournaments whose
+// feeds are fetched, which fill the main grid, the sports picker, the install shelf and
+// every "games today" count. `ARCHIVED_VIEWERS` (bottom of this file) holds finished
+// editions whose apps still work but whose next tournament is years away — they render in
+// a collapsed section, hidden by default, and are deliberately NOT fetched. Adding one to
+// `VIEWERS` instead would put a permanent "Offseason" tile in the grid and spend a network
+// round-trip per page load to learn nothing.
 //
 // Season shape is intentionally coarse — month windows, not exact schedules — because the
 // hub never commits a schedule snapshot the way the individual viewers do. The badge is a
@@ -60,24 +68,11 @@ export const VIEWERS = [
     // Aug–May, wraps the new year. No playoff round — it's a table to the final whistle.
     season: { startMonth: 8, startDay: 15, endMonth: 5 },
   },
-  // World Cup — disabled after the 2026 tournament; the next is 2030, so it would read
-  // "Offseason" for the next four years. Uncomment (and it reappears on the hub) when the
-  // 2030 window approaches. The icon (public/icons/worldcup.png) and viewer are untouched.
-  // {
-  //   id: 'worldcup',
-  //   name: 'World Cup',
-  //   emoji: '⚽',
-  //   espnPath: 'soccer/fifa.world',
-  //   url: 'https://ismayc.github.io/world-cup-viewer/',
-  //   calendarHost: 'world-cup-viewer.netlify.app',
-  //   kind: 'tournament',
-  //   tournamentLabel: 'Tournament',
-  //   window: { start: { m: 6, d: 11 }, end: { m: 7, d: 19 } },
-  // },
-  // Euros — same situation as the World Cup above. The viewer covers the completed
-  // Euro 2024; the next tournament is June–July 2028, so an enabled tile would read
-  // "Offseason" until then. Uncomment when the 2028 window approaches and update the
-  // dates (the icon, public/icons/euros.png, and the viewer are ready either way).
+  // Euros — still fully dormant, NOT in the archived shelf below. The viewer covers the
+  // completed Euro 2024 and the next tournament is June–July 2028. Either promote it into
+  // ARCHIVED_VIEWERS alongside the other finished editions, or move it back up here with
+  // updated dates when the 2028 window approaches; the icon (public/icons/euros.png) and
+  // the viewer are ready either way.
   // {
   //   id: 'euros',
   //   name: 'Euros',
@@ -88,21 +83,6 @@ export const VIEWERS = [
   //   kind: 'tournament',
   //   tournamentLabel: 'Tournament',
   //   window: { start: { m: 6, d: 14 }, end: { m: 7, d: 14 } },
-  // },
-  // Copa America — same situation as the two above. The viewer covers the completed
-  // Copa America 2024; the next edition is 2028, so an enabled tile would read
-  // "Offseason" until then. Uncomment when the 2028 window approaches and update the
-  // dates (the icon, public/icons/copa.png, and the viewer are ready either way).
-  // {
-  //   id: 'copa',
-  //   name: 'Copa America',
-  //   emoji: '⚽',
-  //   espnPath: 'soccer/conmebol.america',
-  //   url: 'https://ismayc.github.io/copa-america-viewer/',
-  //   calendarHost: 'copa-america-viewer.netlify.app',
-  //   kind: 'tournament',
-  //   tournamentLabel: 'Tournament',
-  //   window: { start: { m: 6, d: 20 }, end: { m: 7, d: 14 } },
   // },
   {
     id: 'mens-mm',
@@ -133,4 +113,47 @@ export const VIEWERS = [
   },
 ]
 
-export const viewerById = Object.fromEntries(VIEWERS.map((v) => [v.id, v]))
+// Finished editions. Their apps are complete, tested archives and stay reachable, but the
+// next tournament is years out, so they live in a collapsed shelf instead of the grid and
+// their feeds are never fetched (see the note at the top of this file).
+//
+// `edition` is the year the app covers; `nextEdition` is when the competition returns, which
+// is the honest reason the tile is tucked away. Deliberately NO champion or result here —
+// the hub has a spoiler-free mode, and an always-visible label naming the winner would
+// defeat it for someone about to open the archive.
+export const ARCHIVED_VIEWERS = [
+  {
+    id: 'worldcup',
+    name: 'World Cup',
+    emoji: '⚽',
+    url: 'https://ismayc.github.io/world-cup-viewer/',
+    calendarHost: 'world-cup-viewer.netlify.app',
+    kind: 'tournament',
+    edition: '2026',
+    nextEdition: '2030',
+  },
+  {
+    id: 'wwc',
+    name: "Women's World Cup",
+    emoji: '⚽',
+    url: 'https://ismayc.github.io/womens-world-cup-viewer/',
+    calendarHost: 'womens-world-cup-viewer.netlify.app',
+    kind: 'tournament',
+    edition: '2023',
+    nextEdition: '2027',
+  },
+  {
+    id: 'copa',
+    name: 'Copa América',
+    emoji: '⚽',
+    url: 'https://ismayc.github.io/copa-america-viewer/',
+    calendarHost: 'copa-america-viewer.netlify.app',
+    kind: 'tournament',
+    edition: '2024',
+    nextEdition: '2028',
+  },
+]
+
+export const viewerById = Object.fromEntries(
+  [...VIEWERS, ...ARCHIVED_VIEWERS].map((v) => [v.id, v])
+)

@@ -590,6 +590,116 @@ h3 {
   text-decoration: underline;
 }
 
+/* ── Preseason note ─────────────────────────────────────────────────── */
+/* Sits directly under the summary. Deliberately quiet: it explains an absence, so it must
+   not compete with the thing it is explaining. */
+.note-preseason {
+  margin: -12px 0 22px;
+  font-size: 13px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+/* ── Archived (completed tournaments) ───────────────────────────────── */
+.archived {
+  margin-top: 30px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px 14px;
+}
+.archived-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 2px;
+  cursor: pointer;
+  font-weight: 600;
+  /* NOTE: `display: flex` above makes Chrome drop the native disclosure ::marker, so the
+     row would render with no affordance that it opens. Hence .archived-chevron below —
+     suppress the marker explicitly too, so browsers that DO keep it don't show two. */
+  list-style: none;
+}
+.archived-summary::-webkit-details-marker {
+  display: none;
+}
+.archived-chevron {
+  display: inline-block;
+  font-size: 11px;
+  color: var(--text-dim);
+  transition: transform 0.15s ease;
+}
+.archived[open] .archived-chevron {
+  transform: rotate(90deg);
+}
+.archived-summary:hover .archived-label {
+  color: var(--accent);
+}
+.archived-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.archived-count {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.archived-note {
+  margin: 2px 2px 14px;
+  font-size: 13px;
+  max-width: 62ch;
+}
+.archived-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+.archived-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.archived-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.archived-link:hover .archived-name {
+  color: var(--accent);
+}
+.archived-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  flex: none;
+}
+.archived-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.archived-next {
+  font-size: 12px;
+  flex: none;
+  white-space: nowrap;
+}
+
 /* ── Footer ─────────────────────────────────────────────────────────── */
 .foot {
   margin-top: 32px;

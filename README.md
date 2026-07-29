@@ -1,13 +1,17 @@
 # Sports Trackers — the family hub
 
+[![CI](https://github.com/ismayc/sports-trackers/actions/workflows/ci.yml/badge.svg)](https://github.com/ismayc/sports-trackers/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/endpoint?url=https://ismayc.github.io/sports-trackers/coverage.json)](https://github.com/ismayc/sports-trackers/actions/workflows/ci.yml)
+
 A one-page "home base" for Chester Ismay's family of sports viewers. It answers a single
 question at a glance: **which of my sports have games today?** — and deep-links into each
 viewer for the details.
 
-It fronts six active viewers. Two more — the World Cup and the Euros — are
-commented out in `src/data/viewers.js`: both cover a completed tournament whose
-next edition is years away, so an enabled tile would read "Offseason" until then.
-Uncomment each as its window approaches.
+It fronts **six live viewers** in the main grid, plus a **collapsed shelf of completed
+tournaments** whose apps are finished archives but whose next edition is years away. Those
+are listed in `ARCHIVED_VIEWERS` (`src/data/viewers.js`), are never fetched, and are hidden
+by default. The Euros remains fully commented out in the same file — promote it into either
+list when you want it back.
 
 | Sport | Viewer | Season |
 |---|---|---|
@@ -17,8 +21,22 @@ Uncomment each as its window approaches.
 | ⚽ Premier League | [premier-league](https://ismayc.github.io/premier-league/) | Aug–May |
 | 🏀 Men's March Madness | [mens-march-madness](https://ismayc.github.io/mens-march-madness/) | mid-Mar–early-Apr |
 | 🏀 Women's March Madness | [womens-march-madness](https://ismayc.github.io/womens-march-madness/) | mid-Mar–early-Apr |
-| ⚽ World Cup *(dormant until 2030)* | [world-cup-viewer](https://ismayc.github.io/world-cup-viewer/) | quadrennial |
-| ⚽ Euros *(dormant until 2028)* | [football-euros-viewer](https://ismayc.github.io/football-euros-viewer/) | quadrennial |
+
+Archived (collapsed shelf, hidden by default):
+
+| Tournament | Viewer | Edition | Returns |
+|---|---|---|---|
+| ⚽ World Cup | [world-cup-viewer](https://ismayc.github.io/world-cup-viewer/) | 2026 | 2030 |
+| ⚽ Women's World Cup | [womens-world-cup-viewer](https://ismayc.github.io/womens-world-cup-viewer/) | 2023 | 2027 |
+| ⚽ Copa América | [copa-america-viewer](https://ismayc.github.io/copa-america-viewer/) | 2024 | 2028 |
+
+## Preseason is ignored, by choice
+
+ESPN's scoreboard returns exhibition games, and a plain date query has no reason to exclude
+them — on 29 Jul 2026 the two-week look-ahead offered the NFL Hall of Fame Game as "next
+up". The hub drops any event ESPN stamps `season.type === 1` and says so at the top of the
+page, because an unexplained empty NFL card reads as a bug. Only type 1 is dropped: 3 is the
+postseason and 5 is the NBA play-in, both of which must show.
 
 ## How it works
 
@@ -68,21 +86,45 @@ parts, not UTC), and renders:
 - **Range thinning.** A date-range scoreboard query never drops its earliest games but
   thins the middle days of a dense league's window, so the 14-day look-ahead is fetched
   as two ~week ranges instead of one (`services/espn.js`).
+- **Preseason.** Exhibition games arrive in an ordinary date query and are dropped by
+  `season.type === 1` — see the section above, and `isPreseason` in `services/espn.js`.
 - **Graceful offseason.** An empty or unreachable feed never throws — the card falls back
-  to its season-phase badge. The quadrennial feeds (`soccer/fifa.world`,
-  `soccer/uefa.euro`) are reachable but return matches only during the tournament; the
-  rest of the four-year cycle they read "Offseason".
+  to its season-phase badge. That is also why a finished quadrennial tournament belongs in
+  `ARCHIVED_VIEWERS` rather than the grid: its feed is reachable but empty for years, so a
+  live tile would be a permanent "Offseason" card costing a network round-trip per load.
 
 ## Develop
 
 ```bash
 npm install
-npm run dev      # local dev server
-npm run build    # production build to dist/
-npm run preview  # serve the built dist/
+npm run dev             # local dev server
+npm run build           # production build to dist/
+npm run preview         # serve the built dist/
+npm test                # run the Vitest suite
+npm run test:watch      # watch mode
+npm run coverage:badge  # tests + coverage, and refresh the badge endpoint
 ```
 
-Deploys to GitHub Pages from `main` via `.github/workflows/ci.yml`. `vite.config.js` uses
-`base: './'` so `dist/` serves correctly under the `/sports-trackers/` subpath.
+**Tests: 244 across 16 files, at 100% statements, branches, functions and lines.** Unlike
+the sibling viewers — which round the statement figure for their badge — this repo is
+literally 100% on every metric, and the two places that made that awkward were fixed rather
+than excused: an unreachable `?? 0` in the card sort was removed in favour of a test pinning
+the invariant it guarded (`utils/phase` never returns the `soon` tone without a numeric
+`days`), and the remaining `|| []` / `|| ''` fallbacks each got a test that actually
+triggers them (`test/defensive-fallbacks.test.jsx`).
+
+Two things to know before adding tests:
+
+- **The suite is pinned to `America/New_York`** (`vite.config.js`), not UTC, because the
+  hub's whole job is re-bucketing a UTC feed into the user's calendar day. A test that
+  quietly assumes UTC day boundaries fails locally instead of only on CI.
+  `test/timezone-pinned.test.js` asserts the pin.
+- **The network is stubbed off unconditionally** in `test/setup.js`. The viewers guard the
+  same stub with `if (!global.fetch)`, which never fires on Node 18+ — here that would mean
+  real ESPN calls from the suite, since `App.jsx` fetches every viewer on mount.
+
+Deploys to GitHub Pages from `main` via `.github/workflows/ci.yml`, which now runs the suite
+and regenerates the coverage badge before building. `vite.config.js` uses `base: './'` so
+`dist/` serves correctly under the `/sports-trackers/` subpath.
 
 Unofficial. Not affiliated with the NBA, NFL, WNBA, Premier League, FIFA, or NCAA.

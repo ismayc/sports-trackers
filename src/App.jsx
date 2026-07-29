@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { VIEWERS } from './data/viewers.js'
+import { VIEWERS, ARCHIVED_VIEWERS } from './data/viewers.js'
 import { fetchAllViewers } from './services/espn.js'
 import { seasonPhase } from './utils/phase.js'
 import { detectTimezone, isValidZone, timezoneOptions } from './utils/time.js'
@@ -11,6 +11,7 @@ import ServicesPicker from './components/ServicesPicker.jsx'
 import SportsPicker from './components/SportsPicker.jsx'
 import UpcomingSchedule from './components/UpcomingSchedule.jsx'
 import YesterdayRecap from './components/YesterdayRecap.jsx'
+import ArchivedShelf from './components/ArchivedShelf.jsx'
 
 const EMPTY_FEED = (id) => ({ id, ok: false, today: [], live: 0, yesterday: [], upcoming: [], next: null })
 
@@ -164,8 +165,11 @@ export default function App() {
     }).sort(
       (a, b) =>
         a.rank - b.rank ||
-        // Within "starts soon", the sooner season leads.
-        (a.rank === 3 ? (a.phase.days ?? 0) - (b.phase.days ?? 0) : 0) ||
+        // Within "starts soon", the sooner season leads. `days` is read unguarded because
+        // rank 3 IS the 'soon' tone, and utils/phase only ever returns that tone together
+        // with a numeric `days` — an invariant phase.test.js asserts directly, which is a
+        // better guard than a `?? 0` that can never run and can never be tested.
+        (a.rank === 3 ? a.phase.days - b.phase.days : 0) ||
         a.v.name.localeCompare(b.v.name)
     )
   }, [visibleViewers, feedById, now])
@@ -209,6 +213,14 @@ export default function App() {
 
       <p className="summary">
         {summaryText} <span className="dim">Times in {tz.replace(/_/g, ' ')}.</span>
+      </p>
+
+      {/* Stated up front because its absence is otherwise indistinguishable from a bug:
+          someone who knows the Hall of Fame Game is on Friday would reasonably read an
+          empty NFL card as the hub being broken. */}
+      <p className="note-preseason">
+        <span aria-hidden="true">🚫</span> Preseason games are ignored by choice — only games
+        that count are shown here.
       </p>
 
       <div className="controls">
@@ -270,6 +282,8 @@ export default function App() {
       <UpcomingSchedule feeds={visibleFeeds} tz={tz} filtered={filterActive} />
 
       <InstallShelf viewers={visibleViewers} />
+
+      <ArchivedShelf />
 
       {showSports && (
         <SportsPicker

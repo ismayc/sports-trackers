@@ -89,6 +89,21 @@ export const VIEWERS = [
   //   tournamentLabel: 'Tournament',
   //   window: { start: { m: 6, d: 14 }, end: { m: 7, d: 14 } },
   // },
+  // Copa America — same situation as the two above. The viewer covers the completed
+  // Copa America 2024; the next edition is 2028, so an enabled tile would read
+  // "Offseason" until then. Uncomment when the 2028 window approaches and update the
+  // dates (the icon, public/icons/copa.png, and the viewer are ready either way).
+  // {
+  //   id: 'copa',
+  //   name: 'Copa America',
+  //   emoji: '⚽',
+  //   espnPath: 'soccer/conmebol.america',
+  //   url: 'https://ismayc.github.io/copa-america-viewer/',
+  //   calendarHost: 'copa-america-viewer.netlify.app',
+  //   kind: 'tournament',
+  //   tournamentLabel: 'Tournament',
+  //   window: { start: { m: 6, d: 20 }, end: { m: 7, d: 14 } },
+  // },
   {
     id: 'mens-mm',
     name: "Men's March Madness",

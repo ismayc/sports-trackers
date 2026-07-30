@@ -11,9 +11,10 @@
 // to learn nothing.
 //
 // As of 2026-07-29 every TOURNAMENT is archived and only the four ongoing leagues are live,
-// which is why the grid is styled as a fixed 4-across row (2x2 on mobile) rather than the
-// auto-fill it used when the count varied. Promoting a tournament back into `VIEWERS` puts a
-// fifth card in that row — see the `.grid` rule in index.css before doing so.
+// which is why the grid is styled as a fixed 4-across row (two on a tablet, one per row on a
+// phone) rather than the auto-fill it used when the count varied. Promoting a tournament back
+// into `VIEWERS` puts a fifth card in that row, which no longer divides evenly — see the
+// `.grid` rule in index.css before doing so.
 //
 // Season shape is intentionally coarse — month windows, not exact schedules — because the
 // hub never commits a schedule snapshot the way the individual viewers do. The badge is a

@@ -8,7 +8,8 @@ question at a glance: **which of my sports have games today?** — and deep-link
 viewer for the details.
 
 It fronts **four live viewers** — every one an ongoing league — in a single 4-across row
-(2×2 on mobile), plus a **collapsed shelf of completed tournaments**, hidden by default.
+(two on a tablet, one per row on a phone), plus a **collapsed shelf of completed
+tournaments**, hidden by default.
 
 | Sport | Viewer | Season |
 |---|---|---|

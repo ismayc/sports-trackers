@@ -127,7 +127,7 @@ h3 {
 }
 
 /* ── Card grid ──────────────────────────────────────────────────────── */
-/* Four across on desktop, 2x2 on mobile.
+/* Four across on desktop, two on a tablet, one per row on a phone.
    A FIXED four columns, not the auto-fill/minmax(300px) this used to be: every live viewer
    is now an ongoing league (WNBA, Premier League, NFL, NBA — see data/viewers.js, where all
    six tournaments moved to the archived shelf), so the count is fixed at four and auto-fill
@@ -141,12 +141,27 @@ h3 {
   gap: 14px;
 }
 
-/* Two columns from tablet down, which is the 2x2 Chester asked for on phones and also keeps
-   a 4-across row from crushing the game rows at mid widths. minmax(0, 1fr) rather than 1fr
-   so a long team name can ellipsize instead of forcing the column wider than its share. */
+/* Two columns on a tablet, so a 4-across row is not crushed at mid widths. minmax(0, 1fr)
+   rather than 1fr so a long team name can ellipsize instead of forcing the column wider than
+   its share. */
 @media (max-width: 900px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ONE PER ROW on a phone (changed 2026-07-30; it was 2x2).
+   The cut-off is arithmetic, not taste. `.app` pads 18px a side and the gap is 14px, so a
+   2-across card is (viewport - 50) / 2 — which crosses below the 300px container threshold at
+   about 650px. Under that, 2-across bought nothing and cost a lot: on a 390px phone the cards
+   were 176px, which hid the network chip, stacked every game row onto two lines, and wrapped
+   "Premier League" across two lines in the title. One column gives ~354px on the same phone,
+   back above the threshold, so rows are single-line with the channel visible again.
+   The vertical cost is small because three of the four cards are a one-line "no games"
+   message; only the in-season one is tall. */
+@media (max-width: 650px) {
+  .grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -155,15 +170,34 @@ h3 {
    4-across it ellipsized "ATL @ DAL" down to "A.." — the one thing the row exists to say.
    Shed the least important part first: the network chip, which is still shown on the card's
    "Next:" line and against every game in the two-week breakdown below. */
-/* Shedding the chip is not enough on its own: a LIVE row carries a score line and a running
-   clock ("ATL 16 @ DAL 20" + "30.1 - 1st"), which is far longer than a matchup and a kickoff
-   time, and at 259px that clipped to "ATL 16 …" — losing the opponent. So stack at the same
-   breakpoint rather than trying to fit two variable-length halves on one line. Costs a line of
-   height on cards that have games; never truncates. Same shape `.up-item` takes at 560px. */
-@container card (max-width: 300px) {
+/* TWO thresholds, because the row has two things it can give up and they are worth different
+   amounts. Sizing is driven by the LIVE form of a row, which is much longer than the scheduled
+   one: "ATL 41 @ DAL 50" + "4:56 - 3rd" against "GS @ PHX" + "7:00 PM".
+
+   MEASURED, because it is not what it looks like: a container query sizes against the
+   container's CONTENT box, and `.card` carries 16px of padding plus a 1px border, so the number
+   here is ~34px SMALLER than the card you see. The two thresholds land like this:
+
+     threshold   equals a card of   which tiers hit it
+     420px       ~455px             none today (widest current card is the 425px 2-across)
+     300px       ~334px             only the 4-across desktop card (259px)
+
+   1. The network chip goes first — least useful part of the row, and repeated on the card's
+      "Next:" line and against every game in the two-week list. Because 420px means a 455px card,
+      the practical effect today is that a card row never shows the chip at any tier; the
+      threshold is kept rather than hard-coded to `display: none` so it comes back on its own if
+      cards ever get wider (two across a full 1080px shell would be a 533px card). */
+@container card (max-width: 420px) {
   .row-net {
     display: none;
   }
+}
+
+/* 2. Below a ~334px card there is no room for both halves even without the chip, so stack.
+      Costs a line of height on cards that have games; never truncates. Same shape `.up-item`
+      takes at 560px. Verified in Chrome with a live game at all four tiers (251 / 354 / 375 /
+      425px cards): nothing clipped, and only the 251px one stacks. */
+@container card (max-width: 300px) {
   .row {
     flex-direction: column;
     align-items: stretch;

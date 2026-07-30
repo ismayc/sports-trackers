@@ -127,15 +127,62 @@ h3 {
 }
 
 /* ── Card grid ──────────────────────────────────────────────────────── */
+/* Four across on desktop, 2x2 on mobile.
+   A FIXED four columns, not the auto-fill/minmax(300px) this used to be: every live viewer
+   is now an ongoing league (WNBA, Premier League, NFL, NBA — see data/viewers.js, where all
+   six tournaments moved to the archived shelf), so the count is fixed at four and auto-fill
+   would keep reflowing it by available width. Within the 1080px app that puts each card at
+   (1080 - 3*14) / 4 = 259px.
+   If a tournament is ever promoted back into VIEWERS, this becomes a 5-card row that no
+   longer divides evenly — revisit the rule rather than letting it squeeze. */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+}
+
+/* Two columns from tablet down, which is the 2x2 Chester asked for on phones and also keeps
+   a 4-across row from crushing the game rows at mid widths. minmax(0, 1fr) rather than 1fr
+   so a long team name can ellipsize instead of forcing the column wider than its share. */
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Keep the MATCHUP readable in a narrow card.
+   `.row-right` is `flex: none`, so every pixel of squeeze lands on `.row-line`, and at
+   4-across it ellipsized "ATL @ DAL" down to "A.." — the one thing the row exists to say.
+   Shed the least important part first: the network chip, which is still shown on the card's
+   "Next:" line and against every game in the two-week breakdown below. */
+@container card (max-width: 300px) {
+  .row-net {
+    display: none;
+  }
+}
+
+/* Narrower still (2-across on a phone, ~170px): even without the chip there isn't room for
+   matchup and kickoff on one line, so stack them — the same thing `.up-item` does at 560px. */
+@container card (max-width: 215px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+  }
+  .row-right {
+    justify-content: flex-end;
+  }
 }
 
 .card {
   display: block;
   text-decoration: none;
+  /* A container, so the game rows inside can respond to the CARD's width rather than the
+     viewport's — see the @container rules under the grid. The two are no longer proportional:
+     a 4-across desktop card (259px) and a 2-across phone card (~170px) are both narrow while
+     their viewports are not, and a viewport media query cannot tell them apart. */
+  container-type: inline-size;
+  container-name: card;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -688,11 +735,11 @@ h3 {
   border-radius: 7px;
   flex: none;
 }
+/* Wraps rather than ellipsizing. "Men's March Madness 2026" does not fit one line beside
+   "Next in 2027" in a tile of this width, and clipping it hid the edition year — the more
+   useful half of the label. Two lines is the better trade; the grid row stretches to match. */
 .archived-name {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .archived-next {
   font-size: 12px;

@@ -33,7 +33,8 @@ export default function ArchivedShelf({ viewers = ARCHIVED_VIEWERS }) {
 
       <p className="dim archived-note">
         Finished editions. The apps still work — every result, bracket and standing is in
-        them — but the next tournament is years away, so they stay out of the way up top.
+        them — but each competition is between editions, so they stay out of the way up top.
+        Soonest to return first.
       </p>
 
       <ul className="archived-list">

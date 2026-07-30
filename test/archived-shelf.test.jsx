@@ -34,17 +34,29 @@ describe('ArchivedShelf', () => {
   })
 
   it('shows each edition year and when the competition returns', () => {
-    render(<ArchivedShelf />)
-    for (const v of ARCHIVED_VIEWERS) {
-      expect(screen.getByText(v.edition)).toBeInTheDocument()
-      expect(screen.getByText(`Next in ${v.nextEdition}`)).toBeInTheDocument()
-    }
+    const { container } = render(<ArchivedShelf />)
+    // Per tile, not per page: several viewers share an edition year (three cover 2026) and
+    // two share a return year, so a page-wide getByText is ambiguous by construction.
+    const items = [...container.querySelectorAll('.archived-item')]
+    expect(items).toHaveLength(ARCHIVED_VIEWERS.length)
+    items.forEach((li, i) => {
+      const v = ARCHIVED_VIEWERS[i]
+      expect(li.textContent).toContain(v.edition)
+      expect(li.textContent).toContain(`Next in ${v.nextEdition}`)
+    })
   })
 
-  it('renders the three requested tournaments, each with its own edition', () => {
+  it('renders every archived tournament, soonest to return first', () => {
     render(<ArchivedShelf />)
     const labels = screen.getAllByRole('link').map((a) => a.textContent.replace(/\s+/g, ' ').trim())
-    expect(labels).toEqual(['World Cup 2026', "Women's World Cup 2023", 'Copa América 2024'])
+    expect(labels).toEqual([
+      "Men's March Madness 2026",
+      "Women's March Madness 2026",
+      "Women's World Cup 2023",
+      'Euros 2024',
+      'Copa América 2024',
+      'World Cup 2026',
+    ])
   })
 
   it('points each tile at its own icon', () => {

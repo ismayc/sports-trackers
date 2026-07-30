@@ -7,28 +7,36 @@ A one-page "home base" for Chester Ismay's family of sports viewers. It answers 
 question at a glance: **which of my sports have games today?** — and deep-links into each
 viewer for the details.
 
-It fronts **six live viewers** in the main grid, plus a **collapsed shelf of completed
-tournaments** whose apps are finished archives but whose next edition is years away. Those
-are listed in `ARCHIVED_VIEWERS` (`src/data/viewers.js`), are never fetched, and are hidden
-by default. The Euros remains fully commented out in the same file — promote it into either
-list when you want it back.
+It fronts **four live viewers** — every one an ongoing league — in a single 4-across row
+(2×2 on mobile), plus a **collapsed shelf of completed tournaments**, hidden by default.
 
 | Sport | Viewer | Season |
 |---|---|---|
-| 🏀 NBA | [nba-schedule](https://ismayc.github.io/nba-schedule/) | Oct–Jun |
-| 🏈 NFL | [nfl-schedule](https://ismayc.github.io/nfl-schedule/) | Sep–Feb |
 | 🏀 WNBA | [wnba-schedule](https://ismayc.github.io/wnba-schedule/) | May–Oct |
 | ⚽ Premier League | [premier-league](https://ismayc.github.io/premier-league/) | Aug–May |
-| 🏀 Men's March Madness | [mens-march-madness](https://ismayc.github.io/mens-march-madness/) | mid-Mar–early-Apr |
-| 🏀 Women's March Madness | [womens-march-madness](https://ismayc.github.io/womens-march-madness/) | mid-Mar–early-Apr |
+| 🏈 NFL | [nfl-schedule](https://ismayc.github.io/nfl-schedule/) | Sep–Feb |
+| 🏀 NBA | [nba-schedule](https://ismayc.github.io/nba-schedule/) | Oct–Jun |
 
-Archived (collapsed shelf, hidden by default):
+Archived — `ARCHIVED_VIEWERS` in `src/data/viewers.js`, never fetched, collapsed by default,
+ordered soonest-to-return:
 
 | Tournament | Viewer | Edition | Returns |
 |---|---|---|---|
-| ⚽ World Cup | [world-cup-viewer](https://ismayc.github.io/world-cup-viewer/) | 2026 | 2030 |
+| 🏀 Men's March Madness | [mens-march-madness](https://ismayc.github.io/mens-march-madness/) | 2026 | **2027** |
+| 🏀 Women's March Madness | [womens-march-madness](https://ismayc.github.io/womens-march-madness/) | 2026 | **2027** |
 | ⚽ Women's World Cup | [womens-world-cup-viewer](https://ismayc.github.io/womens-world-cup-viewer/) | 2023 | 2027 |
+| ⚽ Euros | [football-euros-viewer](https://ismayc.github.io/football-euros-viewer/) | 2024 | 2028 |
 | ⚽ Copa América | [copa-america-viewer](https://ismayc.github.io/copa-america-viewer/) | 2024 | 2028 |
+| ⚽ World Cup | [world-cup-viewer](https://ismayc.github.io/world-cup-viewer/) | 2026 | 2030 |
+
+Archived viewers **keep their fetch config** (`espnPath`, `window`, and March Madness's
+`mmHeadline`), so reviving one is a straight move of the object back into `VIEWERS` — the data
+alone therefore can't tell you they aren't fetched, which is why `test/app.test.jsx` asserts
+that the feed loader only ever receives the live list.
+
+⚠️ **The two March Madness viewers are annual**, unlike the quadrennial four: archiving them
+means **the hub will not surface their games in March 2027** until one is moved back into
+`VIEWERS`. That is a deliberate trade, recorded here so it isn't a surprise next spring.
 
 ## Preseason is ignored, by choice
 
@@ -51,7 +59,7 @@ parts, not UTC), and renders:
   Starts in Nd / Offseason);
 - a **My teams playing today** section — star any team in the listings and the hub tracks
   it in *its own* `localStorage` (`st:follow`), then deep-links matches into their viewer
-  with `?teams=ABBR`;
+  with `?team=ABBR` (singular — a `?teams=` list is silently ignored by every viewer);
 - a **Yesterday** recap — collapsed by default (the page's job is what's on now):
   yesterday's finals with scores across the visible viewers, one press away. Follows the
   sports picker but not the services filter — a result isn't hidden because you lack the
@@ -70,17 +78,19 @@ parts, not UTC), and renders:
   on load, then the saved choice, then the detected device zone. Every bucket (today,
   yesterday, the two-week views) recomputes in the chosen zone;
 - **game deep links** — every game row opens its viewer directly on that game's detail
-  (`?game=<espn id>`, read by all six viewers), with `&team=ABBR` riding along as the
+  (`?game=<espn id>`, read by every viewer in the family), with `&team=ABBR` riding along as the
   fallback filter if the app's committed snapshot doesn't hold the game yet;
 - an **install & subscribe** shelf — Open links plus `webcal://` calendar subscriptions
   for the viewers that publish a Netlify `.ics` feed.
 
 ### Feed traps baked in
 
-- **March Madness filtering.** The men's/women's college `seasontype=3` window also carries
-  NIT / Crown / WBIT games. The hub keeps only rows whose `competitions[0].notes[0].headline`
-  starts with `NCAA Men's/Women's Basketball Championship`, and fetches those two with
-  `&groups=50&seasontype=3`. See `src/services/espn.js`.
+- **March Madness filtering** (currently dormant — both viewers are archived, so nothing
+  exercises this until one is revived; the code and config are kept precisely so it works the
+  day it is). The men's/women's college `seasontype=3` window also carries NIT / Crown / WBIT
+  games. Only rows whose `competitions[0].notes[0].headline` starts with
+  `NCAA Men's/Women's Basketball Championship` are kept, and those two viewers are fetched
+  with `&groups=50&seasontype=3`. See `src/services/espn.js`.
 - **Timezone bucketing.** A 10pm Pacific tip is a different calendar day back east, so the
   three-day fetch is re-bucketed by the viewer's zone (`utils/time.js#dayKey`).
 - **Range thinning.** A date-range scoreboard query never drops its earliest games but
@@ -105,7 +115,7 @@ npm run test:watch      # watch mode
 npm run coverage:badge  # tests + coverage, and refresh the badge endpoint
 ```
 
-**Tests: 244 across 16 files, at 100% statements, branches, functions and lines.** Unlike
+**Tests: 249 across 16 files, at 100% statements, branches, functions and lines.** Unlike
 the sibling viewers — which round the statement figure for their badge — this repo is
 literally 100% on every metric, and the two places that made that awkward were fixed rather
 than excused: an unreachable `?? 0` in the card sort was removed in favour of a test pinning

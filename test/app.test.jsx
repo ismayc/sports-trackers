@@ -75,6 +75,20 @@ describe('App shell', () => {
       expect(screen.queryByRole('heading', { name: v.name })).not.toBeInTheDocument()
     }
   })
+
+  // THE invariant that makes a viewer "archived". Archived entries deliberately keep their
+  // espnPath and window so reviving them is a straight move between arrays, which means the
+  // data alone can no longer tell you they are not fetched — only this can. Six wasted
+  // round-trips per page load is exactly what the shelf exists to avoid.
+  it('fetches the live viewers ONLY — never an archived one', async () => {
+    show()
+    await settle()
+    expect(fetchAllViewers).toHaveBeenCalledTimes(1)
+    const requested = fetchAllViewers.mock.calls[0][0]
+    expect(requested.map((v) => v.id)).toEqual(VIEWERS.map((v) => v.id))
+    const archived = new Set(ARCHIVED_VIEWERS.map((v) => v.id))
+    for (const v of requested) expect(archived.has(v.id), `${v.id} was fetched`).toBe(false)
+  })
 })
 
 describe('the preseason note', () => {

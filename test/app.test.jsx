@@ -127,6 +127,21 @@ describe('the archived tournaments shelf', () => {
     expect(details.open).toBe(false)
   })
 
+  it('sits directly above the two-week breakdown, not at the foot of the page', async () => {
+    // Position is a requirement, not an accident: below the breakdown it was past a long
+    // scroll and effectively invisible. Asserted on real DOM order so it cannot drift back.
+    fetchAllViewers.mockResolvedValue(
+      feedsFor({ nba: { upcoming: [game({ id: 'u' })], yesterday: [game({ id: 'y', state: 'post' })] } })
+    )
+    const { container } = show()
+    await settle()
+
+    const order = [...container.querySelectorAll('.recap, .archived, .upcoming, .shelf')].map(
+      (el) => el.className.split(' ')[0]
+    )
+    expect(order).toEqual(['recap', 'archived', 'upcoming', 'shelf'])
+  })
+
   it('holds the three completed tournaments once opened', async () => {
     const { container } = show()
     await settle()

@@ -92,7 +92,13 @@ parts, not UTC), and renders:
   `NCAA Men's/Women's Basketball Championship` are kept, and those two viewers are fetched
   with `&groups=50&seasontype=3`. See `src/services/espn.js`.
 - **Timezone bucketing.** A 10pm Pacific tip is a different calendar day back east, so the
-  three-day fetch is re-bucketed by the viewer's zone (`utils/time.js#dayKey`).
+  fetched days are re-bucketed by the viewer's zone (`utils/time.js#dayKey`). The days
+  requested are derived from the user's OWN yesterday/today, not from UTC `now` — anchoring on
+  UTC silently emptied the whole "Yesterday" section for anyone west of UTC late in their day,
+  because local yesterday had by then moved two days back. `dates=` is also not a UTC day:
+  verified against the live feed, `dates=20260728` returns instants from `07-28T23:30Z` to
+  `07-29T02:00Z`, i.e. ESPN files by the US Eastern day. See `DAYS_BACK` in
+  `services/espn.js` for why [tKey-2, tKey+1] covers every timezone on earth.
 - **Range thinning.** A date-range scoreboard query never drops its earliest games but
   thins the middle days of a dense league's window, so the 14-day look-ahead is fetched
   as two ~week ranges instead of one (`services/espn.js`).
@@ -115,7 +121,7 @@ npm run test:watch      # watch mode
 npm run coverage:badge  # tests + coverage, and refresh the badge endpoint
 ```
 
-**Tests: 249 across 16 files, at 100% statements, branches, functions and lines.** Unlike
+**Tests: 256 across 16 files, at 100% statements, branches, functions and lines.** Unlike
 the sibling viewers — which round the statement figure for their badge — this repo is
 literally 100% on every metric, and the two places that made that awkward were fixed rather
 than excused: an unreachable `?? 0` in the card sort was removed in favour of a test pinning

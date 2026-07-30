@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { isPreseason, fetchViewerDay, fetchAllViewers } from '../src/services/espn.js'
-import { espnEvent, stubFetch } from './helpers/feed.js'
+import { espnEvent, stubFetch, stubFetchByDate } from './helpers/feed.js'
 
 const NBA = { id: 'nba', espnPath: 'basketball/nba', kind: 'league' }
 const NOW = new Date('2026-07-29T18:00:00Z') // 2pm Eastern
@@ -258,12 +258,101 @@ describe('day bucketing and the look-ahead', () => {
     expect(f.today).toHaveLength(2) // not 10, despite five identical query responses
   })
 
-  it('asks for three single days plus two forward ranges', async () => {
+  it('asks for four single days plus two forward ranges, anchored on the USER\'S today', async () => {
     const fetchMock = stubFetch([])
     await run()
     const dates = fetchMock.mock.calls.map((c) => String(c[0]).match(/dates=([\d-]+)/)[1])
-    // mid = ceil(14/2)+1 = 8, so the horizon splits at +8/+9 rather than evenly.
-    expect(dates).toEqual(['20260728', '20260729', '20260730', '20260731-20260806', '20260807-20260812'])
+    // now = 2026-07-29T18:00Z, which is Jul 29 in New York, so tKey = 2026-07-29 and the
+    // singles run tKey-2 .. tKey+1. The ranges then carry on contiguously to tKey+14.
+    expect(dates).toEqual([
+      '20260727',
+      '20260728',
+      '20260729',
+      '20260730',
+      '20260731-20260806',
+      '20260807-20260812', // tKey + 14
+    ])
+  })
+
+  it('covers a contiguous span with no gap between the singles and the ranges', async () => {
+    const fetchMock = stubFetch([])
+    await run()
+    const dates = fetchMock.mock.calls.map((c) => String(c[0]).match(/dates=([\d-]+)/)[1])
+    // Flatten every requested day, single or range endpoint, and check the union is unbroken.
+    const days = []
+    for (const d of dates) {
+      const [a, b] = d.split('-')
+      days.push(a)
+      if (b) days.push(b)
+    }
+    const asDate = (k) => new Date(`${k.slice(0, 4)}-${k.slice(4, 6)}-${k.slice(6)}T12:00:00Z`)
+    for (let i = 1; i < days.length; i++) {
+      const gap = (asDate(days[i]) - asDate(days[i - 1])) / 86400000
+      expect(gap, `gap between ${days[i - 1]} and ${days[i]}`).toBeLessThanOrEqual(7)
+      expect(gap).toBeGreaterThan(0)
+    }
+  })
+
+  // The bug this window shape exists to prevent.
+  describe('the "Yesterday" regression: a western zone late in its own day', () => {
+    // 2026-07-30T00:10Z is 17:10 on Jul 29 in Phoenix. UTC has rolled to the 30th while the
+    // user is still on the 29th, so their yesterday (the 28th) begins two days back. The old
+    // window (UTC now ±1 = Jul 29/30/31) never asked for the 28th, and the section emptied.
+    const LATE = new Date('2026-07-30T00:10:00Z')
+    const PHX = 'America/Phoenix'
+
+    it('requests the day holding yesterday\'s AFTERNOON games', async () => {
+      const fetchMock = stubFetch([])
+      await fetchViewerDay(NBA, { now: LATE, tz: PHX })
+      const dates = fetchMock.mock.calls.map((c) => String(c[0]).match(/dates=([\d-]+)/)[1])
+      expect(dates).toContain('20260728')
+    })
+
+    it('puts a 1pm and a 4pm game from yesterday in the yesterday bucket', async () => {
+      stubFetchByDate([
+        // 13:00 and 16:00 Phoenix on Jul 28 — the two that used to vanish.
+        espnEvent({ id: 'aft', date: '2026-07-28T20:00Z', state: 'post', completed: true, awayScore: '70', homeScore: '80' }),
+        espnEvent({ id: 'eve', date: '2026-07-28T23:00Z', state: 'post', completed: true, awayScore: '71', homeScore: '81' }),
+        // 19:00 Phoenix on Jul 28 — already on the next UTC day, so it always survived.
+        espnEvent({ id: 'night', date: '2026-07-29T02:00Z', state: 'post', completed: true, awayScore: '72', homeScore: '82' }),
+      ])
+      const f = await fetchViewerDay(NBA, { now: LATE, tz: PHX })
+      expect(f.yesterday.map((g) => g.id)).toEqual(['aft', 'eve', 'night'])
+      expect(f.today).toEqual([])
+    })
+
+    it('still separates today from yesterday correctly in that same moment', async () => {
+      stubFetchByDate([
+        espnEvent({ id: 'y', date: '2026-07-28T20:00Z', state: 'post', completed: true }),
+        espnEvent({ id: 't', date: '2026-07-30T01:00Z' }), // 18:00 Jul 29 Phoenix — today
+      ])
+      const f = await fetchViewerDay(NBA, { now: LATE, tz: PHX })
+      expect(f.yesterday.map((g) => g.id)).toEqual(['y'])
+      expect(f.today.map((g) => g.id)).toEqual(['t'])
+    })
+  })
+
+  // The mirror image: a zone far AHEAD of UTC, where the local day starts before UTC's.
+  describe('an eastern zone early in its own day', () => {
+    const EARLY = new Date('2026-07-29T22:00:00Z') // 08:00 Jul 30 in Sydney
+    const SYD = 'Australia/Sydney'
+
+    it('requests back far enough for that zone\'s yesterday', async () => {
+      const fetchMock = stubFetch([])
+      await fetchViewerDay(NBA, { now: EARLY, tz: SYD })
+      const dates = fetchMock.mock.calls.map((c) => String(c[0]).match(/dates=([\d-]+)/)[1])
+      // Local today is Jul 30, so yesterday is Jul 29 and the singles start at Jul 28.
+      expect(dates.slice(0, 4)).toEqual(['20260728', '20260729', '20260730', '20260731'])
+    })
+
+    it('buckets an evening game from the local yesterday', async () => {
+      stubFetchByDate([
+        // 19:00 Jul 29 Sydney = 09:00Z Jul 29.
+        espnEvent({ id: 'syd-y', date: '2026-07-29T09:00Z', state: 'post', completed: true }),
+      ])
+      const f = await fetchViewerDay(NBA, { now: EARLY, tz: SYD })
+      expect(f.yesterday.map((g) => g.id)).toEqual(['syd-y'])
+    })
   })
 })
 

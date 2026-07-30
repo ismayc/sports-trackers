@@ -80,9 +80,46 @@ export function feed(over = {}) {
 /**
  * Install a global.fetch that answers every scoreboard request with `events`.
  * Accepts either an array (same answer every time) or a function of the request URL.
+ *
+ * NOTE this ignores the requested `dates=`, so it cannot tell you whether the code asked for
+ * the right days — every query returns everything. Fine for parsing/bucketing shape; use
+ * stubFetchByDate below for anything about the query WINDOW.
  */
 export function stubFetch(events) {
   const fn = typeof events === 'function' ? events : () => events
   global.fetch = vi.fn(async (url) => ({ ok: true, json: async () => ({ events: fn(String(url)) || [] }) }))
+  return global.fetch
+}
+
+// ESPN files an event under its US EASTERN calendar day, not the UTC one — verified against
+// the live feed, where `dates=20260728` returned instants from 2026-07-28T23:30Z through
+// 2026-07-29T02:00Z. Model that here so a test can prove the code asked for the right days.
+const easternDay = (iso) => {
+  const p = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(iso))
+  const get = (t) => p.find((x) => x.type === t).value
+  return `${get('year')}${get('month')}${get('day')}`
+}
+
+/**
+ * A fetch stub that HONOURS the requested date, single (`20260728`) or range
+ * (`20260731-20260806`). An event is returned only when the day ESPN would file it under was
+ * actually asked for — so a missing day in the query window shows up as a missing game,
+ * which is the whole point when testing the window itself.
+ */
+export function stubFetchByDate(events) {
+  global.fetch = vi.fn(async (url) => {
+    const asked = String(url).match(/dates=([\d-]+)/)?.[1] ?? ''
+    const [from, to = from] = asked.split('-')
+    const hit = events.filter((ev) => {
+      const day = easternDay(ev.date)
+      return day >= from && day <= to
+    })
+    return { ok: true, json: async () => ({ events: hit }) }
+  })
   return global.fetch
 }

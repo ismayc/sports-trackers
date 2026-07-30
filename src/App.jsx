@@ -279,11 +279,14 @@ export default function App() {
 
       <YesterdayRecap feeds={visibleFeeds} tz={tz} hideScores={hideScores} />
 
+      {/* Deliberately ABOVE the two-week breakdown, not at the foot of the page: the
+          breakdown is a long scroll, and anything after it is effectively hidden. Order is
+          asserted in app.test.jsx so it cannot drift back. */}
+      <ArchivedShelf />
+
       <UpcomingSchedule feeds={visibleFeeds} tz={tz} filtered={filterActive} />
 
       <InstallShelf viewers={visibleViewers} />
-
-      <ArchivedShelf />
 
       {showSports && (
         <SportsPicker

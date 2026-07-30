@@ -65,6 +65,15 @@ export function dayKey(iso, tz) {
 
 export const todayKey = (tz, now = new Date()) => dayKey(now.toISOString(), tz)
 
+// Step a YYYY-MM-DD key by whole days. Anchored at NOON UTC so a ±1 step can never land on
+// the wrong date via a DST jump — the same trick the two-week grid uses, now shared with
+// services/espn.js, which builds its query window out of these keys.
+export function addDayKey(key, n) {
+  const d = new Date(`${key}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + n)
+  return d.toISOString().slice(0, 10)
+}
+
 // "Fri 7:00pm" — one compact string for a next-up game.
 export function formatDayTime(iso, tz) {
   // Weekday + date, since "next up" can be up to two weeks out and a bare weekday would be

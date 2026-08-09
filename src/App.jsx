@@ -71,7 +71,17 @@ export default function App() {
   const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'dark')
   const [feeds, setFeeds] = useState(() => VIEWERS.map((v) => EMPTY_FEED(v.id)))
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
-  const now = useMemo(() => new Date(), [])
+  const [now, setNow] = useState(() => new Date())
+
+  // The hub is a glanceable dashboard, so the feeds stay current instead of freezing at
+  // page load: advance `now` every minute while anything is live, every five otherwise.
+  // The fetch effect below depends on `now`, so each tick is also a refetch, and the
+  // day buckets re-anchor if the page is left open across midnight.
+  const anyLive = feeds.some((f) => f.live > 0)
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), anyLive ? 60_000 : 300_000)
+    return () => clearInterval(id)
+  }, [anyLive])
 
   // Which viewers to show (null = all), and the "what can I watch" filter (chosen services
   // + whether it's engaged).

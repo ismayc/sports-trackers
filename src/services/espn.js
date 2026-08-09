@@ -21,7 +21,14 @@ const BASE = 'https://site.api.espn.com/apis/site/v2/sports'
 // I watch" filter (see utils/watch.js).
 function broadcastNames(c) {
   const names = new Set()
-  for (const b of c.broadcasts || []) for (const n of b.names || []) names.add(n)
+  // Each flat entry is stamped with its market; an away-market RSN ("MNMT",
+  // "Arizona's Family 3TV") is not watchable in the user's market, so only the
+  // national entries belong in the watch filter. Entries with no market stamp are
+  // kept — hiding a real national network is the worse failure.
+  for (const b of c.broadcasts || []) {
+    if ((b.market ?? 'national') !== 'national') continue
+    for (const n of b.names || []) names.add(n)
+  }
   for (const gb of c.geoBroadcasts || []) {
     const n = gb.media?.shortName
     const nat = gb.market?.type === 'National' || gb.type?.shortName === 'Streaming'

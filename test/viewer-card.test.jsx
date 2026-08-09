@@ -80,3 +80,11 @@ describe('ViewerCard', () => {
     expect(screen.queryByText(/101/)).not.toBeInTheDocument()
   })
 })
+
+describe('ViewerCard with a failed feed', () => {
+  it('says the scoreboard was unreachable instead of claiming an empty fortnight', () => {
+    show(feed({ ok: false }))
+    expect(screen.getByText(/Couldn’t reach the scoreboard/)).toBeInTheDocument()
+    expect(screen.queryByText(/No games in the next two weeks/)).not.toBeInTheDocument()
+  })
+})

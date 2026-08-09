@@ -28,8 +28,11 @@ export function seasonPhase(v, { now = new Date(), hasGames = false } = {}) {
     return { label: 'Offseason', tone: 'cold' }
   }
 
-  // Leagues.
-  if (inMonthRange(m, v.season.startMonth, v.season.endMonth)) {
+  // Leagues. The month window is honest except at its leading edge: inside the start
+  // month the season hasn't begun until startDay (the PL kicks off Aug 15 — the first
+  // two weeks of August are still "Starts in Nd", not "In season").
+  const beforeStart = m === v.season.startMonth && now.getDate() < (v.season.startDay || 1)
+  if (!beforeStart && inMonthRange(m, v.season.startMonth, v.season.endMonth)) {
     if (v.playoffs && inMonthRange(m, v.playoffs.startMonth, v.playoffs.endMonth))
       return { label: 'Playoffs', tone: 'hot' }
     return { label: 'In season', tone: 'on' }

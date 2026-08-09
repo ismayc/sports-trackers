@@ -169,6 +169,25 @@ describe('broadcast extraction', () => {
     expect(f.today[0].broadcast).not.toContain('MSG')
   })
 
+  it('drops away- and home-market entries from the flat broadcasts list', async () => {
+    // Live-feed shape from a real WNBA slate: the flat list stamps each entry with
+    // its market, and the away entry carries that market's RSN and streamer — not
+    // watchable here, so it must not feed the watch filter.
+    stubFetch([
+      espnEvent({
+        id: 'rsn',
+        date: '2026-07-29T23:00Z',
+        broadcasts: [
+          { market: 'national', names: ['NBC', 'Peacock'] },
+          { market: 'away', names: ["Arizona's Family 3TV", 'Merc+'] },
+          { market: 'home', names: ['MNMT'] },
+        ],
+      }),
+    ])
+    const f = await run()
+    expect(f.today[0].broadcast).toEqual(['NBC', 'Peacock'])
+  })
+
   it('de-duplicates a network listed twice', async () => {
     stubFetch([
       espnEvent({

@@ -459,3 +459,28 @@ describe('footer', () => {
     expect(screen.getByRole('link', { name: 'Chester Ismay' })).toHaveAttribute('href', 'https://chester.rbind.io')
   })
 })
+
+describe('refresh cadence', () => {
+  it('refetches on the idle interval instead of freezing at page load', async () => {
+    show()
+    await settle()
+    expect(fetchAllViewers).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300_000)
+    })
+    expect(fetchAllViewers.mock.calls.length).toBeGreaterThan(1)
+  })
+
+  it('tightens to a one-minute cadence while a game is live', async () => {
+    fetchAllViewers.mockResolvedValue(
+      feedsFor({ wnba: { live: 1, today: [game({ id: 'lv', state: 'in' })] } })
+    )
+    show()
+    await settle()
+    const after = fetchAllViewers.mock.calls.length
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000)
+    })
+    expect(fetchAllViewers.mock.calls.length).toBeGreaterThan(after)
+  })
+})

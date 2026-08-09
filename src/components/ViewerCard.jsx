@@ -49,6 +49,10 @@ export default function ViewerCard({ viewer, feed, phase, tz, filtered = false, 
             {next.awayAbbr || next.away} @ {next.homeAbbr || next.home}, {formatDayTime(next.tip, tz)}
             {net && <span className="card-net">{net}</span>}
           </div>
+        ) : !feed.ok ? (
+          // A failed feed is not the same as an empty one — "no games" here would be
+          // indistinguishable from a real offseason lull.
+          <div className="card-next dim">Couldn’t reach the scoreboard — open the viewer</div>
         ) : (
           <div className="card-next dim">
             {filtered

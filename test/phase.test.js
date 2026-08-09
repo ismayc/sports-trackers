@@ -72,6 +72,20 @@ describe('seasonPhase — leagues', () => {
     expect(seasonPhase(epl, { now: on(2026, 4, 1) })).toEqual({ label: 'In season', tone: 'on' })
   })
 
+  it('is still "Starts in Nd" inside the start month but before startDay', () => {
+    // Aug 9 with a PL that kicks off Aug 15: month-granular logic said "In season"
+    // twelve days early; the leading edge must respect startDay.
+    const epl = league({ season: { startMonth: 8, startDay: 15, endMonth: 5 }, playoffs: undefined })
+    const p = seasonPhase(epl, { now: on(2026, 8, 9) })
+    expect(p.tone).toBe('soon')
+    expect(p.label).toBe('Starts in 6d')
+    // From startDay itself, the season is on.
+    expect(seasonPhase(epl, { now: on(2026, 8, 15) })).toEqual({ label: 'In season', tone: 'on' })
+    // A league with no startDay starts on the 1st — the whole start month is in season.
+    const noDay = league({ season: { startMonth: 8, endMonth: 5 }, playoffs: undefined })
+    expect(seasonPhase(noDay, { now: on(2026, 8, 1) })).toEqual({ label: 'In season', tone: 'on' })
+  })
+
   it('counts down inside 45 days of the season opening', () => {
     const nfl = league({ season: { startMonth: 9, startDay: 4, endMonth: 2 }, playoffs: { startMonth: 1, endMonth: 2 } })
     const p = seasonPhase(nfl, { now: on(2026, 7, 29) })

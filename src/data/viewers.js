@@ -45,7 +45,7 @@ export const VIEWERS = [
     emoji: '🏈',
     espnPath: 'football/nfl',
     url: 'https://ismayc.github.io/nfl-schedule/',
-    calendarHost: 'nfl-schedule.netlify.app',
+    calendarHost: 'the-nfl-schedule.netlify.app',
     kind: 'league',
     // Sep through the Feb Super Bowl; playoffs Jan–Feb.
     season: { startMonth: 9, startDay: 4, endMonth: 2 },
@@ -57,7 +57,7 @@ export const VIEWERS = [
     emoji: '🏀',
     espnPath: 'basketball/wnba',
     url: 'https://ismayc.github.io/wnba-schedule/',
-    calendarHost: 'wnba-schedule.netlify.app',
+    calendarHost: 'the-wnba-schedule.netlify.app',
     kind: 'league',
     // May–Oct, within one calendar year; playoffs Sep–Oct.
     season: { startMonth: 5, startDay: 1, endMonth: 10 },
@@ -69,7 +69,7 @@ export const VIEWERS = [
     emoji: '⚽',
     espnPath: 'soccer/eng.1',
     url: 'https://ismayc.github.io/premier-league/',
-    calendarHost: 'premier-league.netlify.app',
+    calendarHost: 'premier-league-viewer.netlify.app',
     kind: 'league',
     // Aug–May, wraps the new year. No playoff round — it's a table to the final whistle.
     season: { startMonth: 8, startDay: 15, endMonth: 5 },

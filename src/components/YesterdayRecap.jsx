@@ -60,7 +60,7 @@ export default function YesterdayRecap({ feeds, tz, hideScores = false }) {
                   {v.name}
                 </span>
                 <div className="up-row">
-                  <GameRow viewerId={viewerId} game={game} tz={tz} hideScores={hideScores} />
+                  <GameRow viewerId={viewerId} game={game} tz={tz} hideScores={hideScores} names />
                 </div>
               </a>
             )

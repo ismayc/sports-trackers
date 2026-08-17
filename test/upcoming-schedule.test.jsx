@@ -84,6 +84,17 @@ describe('UpcomingSchedule', () => {
     )
   })
 
+  it('notes the my-teams filter, and both filters together', () => {
+    show([feed({ upcoming: [game({ id: 'a' })] })], { teamFiltered: true })
+    expect(screen.getByRole('heading', { name: /Next two weeks/ })).toHaveTextContent(
+      '1 game for your teams'
+    )
+    show([feed({ upcoming: [game({ id: 'a' })] })], { teamFiltered: true, filtered: true })
+    expect(screen.getAllByRole('heading', { name: /Next two weeks/ })[1]).toHaveTextContent(
+      '1 game for your teams on your services'
+    )
+  })
+
   it('sorts games within a day and tags each with its sport', () => {
     show([
       feed({ id: 'nba', upcoming: [game({ id: 'late', tip: '2026-07-29T23:30:00Z' })] }),

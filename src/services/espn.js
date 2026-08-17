@@ -54,6 +54,22 @@ export function isPreseason(ev) {
   return s.type === 1 || s.slug === 'preseason'
 }
 
+// The crest a row shows. The scoreboard's own `team.logo` cannot be used as it arrives: for
+// some clubs it is `.../500/sea.png` and for others `.../500/scoreboard/sea.png`, and the two
+// are drawn in OPPOSITE inks: the plain file is the dark-on-transparent mark, the
+// `/scoreboard/` one is light-on-transparent for ESPN's own dark scoreboard. Mixing them puts
+// invisible logos in a row whichever background it has, which is exactly what the first
+// attempt did (Seattle, Portland and Phoenix vanished, Chicago and Atlanta did not).
+//
+// Dropping the `/scoreboard/` segment normalizes every club onto the light-background mark.
+// Checked against ESPN's own catalog on 2026-08-17: across all 97 teams in the four live
+// leagues, the logo ESPN tags `rel: ["default"]` NEVER contains that segment, and each
+// stripped URL resolves.
+export function teamLogo(team) {
+  const href = team?.logo
+  return href ? href.replace('/scoreboard/', '/') : null
+}
+
 function normalize(ev, v) {
   const c = ev.competitions?.[0]
   if (!c) return null
@@ -89,6 +105,10 @@ function normalize(ev, v) {
     away: away.team?.displayName || away.team?.shortDisplayName || away.team?.name || '',
     homeAbbr: home.team?.abbreviation || '',
     awayAbbr: away.team?.abbreviation || '',
+    // The crest each row shows beside the team. Null when ESPN omits it, which the row
+    // renders as no logo rather than a broken image.
+    homeLogo: teamLogo(home.team),
+    awayLogo: teamLogo(away.team),
     state: st.state || 'pre', // 'pre' | 'in' | 'post'
     score: hasScore ? [as, hs] : null, // [away, home] so it reads left-to-right as AWAY @ HOME
     statusLabel: st.shortDetail || st.detail || null, // "Q3 4:21", "Final", "7:00 PM"

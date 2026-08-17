@@ -4,11 +4,13 @@ import { fetchAllViewers } from './services/espn.js'
 import { seasonPhase } from './utils/phase.js'
 import { detectTimezone, isValidZone, timezoneOptions } from './utils/time.js'
 import { isWatchable } from './utils/watch.js'
+import { useFollow } from './context/follow.jsx'
 import ViewerCard from './components/ViewerCard.jsx'
 import MyTeams from './components/MyTeams.jsx'
 import InstallShelf from './components/InstallShelf.jsx'
 import ServicesPicker from './components/ServicesPicker.jsx'
 import SportsPicker from './components/SportsPicker.jsx'
+import TeamsPicker from './components/TeamsPicker.jsx'
 import UpcomingSchedule from './components/UpcomingSchedule.jsx'
 import YesterdayRecap from './components/YesterdayRecap.jsx'
 import ArchivedShelf from './components/ArchivedShelf.jsx'
@@ -41,6 +43,26 @@ function applyWatchFilter(feed, services, on) {
   }
 }
 
+// Drop every game neither side of which the user follows, and re-derive the counts and the
+// "next up" from what's left. Returns the feed unchanged when the filter is off.
+//
+// This one also filters YESTERDAY, which the watch filter deliberately does not: last night's
+// broadcast is moot by now, but a result either involves your team or it doesn't.
+function applyTeamFilter(feed, follow, on) {
+  if (!on) return feed
+  const keep = (g) => follow.isFollowed(feed.id, g.awayAbbr) || follow.isFollowed(feed.id, g.homeAbbr)
+  const today = feed.today.filter(keep)
+  const upcoming = (feed.upcoming || []).filter(keep)
+  return {
+    ...feed,
+    today,
+    upcoming,
+    yesterday: (feed.yesterday || []).filter(keep),
+    live: today.filter((g) => g.state === 'in').length,
+    next: upcoming[0] || null,
+  }
+}
+
 // Card ordering: live first, then anything on today, then in-season/tournament, then
 // "starts soon", then offseason. Within a tier, name order keeps it stable.
 function rankOf(feed, phase) {
@@ -52,6 +74,7 @@ function rankOf(feed, phase) {
 }
 
 export default function App() {
+  const follow = useFollow()
   const detectedTz = useMemo(detectTimezone, [])
   // Like the viewers: a shared link's ?tz= wins on load, then a saved choice, then the
   // device zone. The hub writes no URL state, so the param is read-only here.
@@ -90,8 +113,11 @@ export default function App() {
   const [watchOnly, setWatchOnly] = useState(() => loadJson('st:watchOnly', false))
   // Spoiler-free mode, same idea as the viewers': matchups and states stay, numbers go.
   const [hideScores, setHideScores] = useState(() => loadJson('st:hideScores', false))
+  // "Only my teams", using the same follow set the stars write and every viewer app reads.
+  const [teamsOnly, setTeamsOnly] = useState(() => loadJson('st:teamsOnly', false))
   const [showPicker, setShowPicker] = useState(false)
   const [showSports, setShowSports] = useState(false)
+  const [showTeams, setShowTeams] = useState(false)
 
   useEffect(() => {
     try {
@@ -122,6 +148,13 @@ export default function App() {
       /* private mode */
     }
   }, [hideScores])
+  useEffect(() => {
+    try {
+      localStorage.setItem('st:teamsOnly', JSON.stringify(teamsOnly))
+    } catch {
+      /* private mode */
+    }
+  }, [teamsOnly])
 
   // Persist + apply the theme.
   useEffect(() => {
@@ -145,11 +178,15 @@ export default function App() {
     return () => ctrl.abort()
   }, [now, tz])
 
-  // The filter is engaged only when it's on AND at least one service is chosen.
+  // Each filter is engaged only when it's on AND it has something to filter by.
   const filterActive = watchOnly && services.length > 0
+  const teamFilterActive = teamsOnly && follow.count > 0
   const displayFeeds = useMemo(
-    () => feeds.map((f) => applyWatchFilter(f, services, filterActive)),
-    [feeds, services, filterActive]
+    () =>
+      feeds.map((f) =>
+        applyTeamFilter(applyWatchFilter(f, services, filterActive), follow, teamFilterActive)
+      ),
+    [feeds, services, filterActive, follow, teamFilterActive]
   )
 
   const feedById = useMemo(
@@ -193,7 +230,16 @@ export default function App() {
   if (status === 'loading') summaryText = 'Checking every viewer…'
   else if (status === 'error')
     summaryText = 'Could not reach the scoreboard — showing season badges only.'
-  else if (filterActive) {
+  else if (teamFilterActive) {
+    // Narrowed to the followed teams, and possibly to the chosen services as well.
+    const on = filterActive ? ' on your services' : ''
+    if (totalLive > 0)
+      summaryText = `${g(totalLive)} live now for your teams${on} · ${totalToday} today.`
+    else if (totalToday > 0) summaryText = `${g(totalToday)} today for your teams${on}.`
+    else if (totalUpcoming > 0)
+      summaryText = `Nothing for your teams today${on}. ${totalUpcoming} coming up in the next two weeks.`
+    else summaryText = `No games for your teams${on} in the next two weeks.`
+  } else if (filterActive) {
     // Filtered to what the chosen services can watch.
     if (totalLive > 0) summaryText = `${g(totalLive)} live now you can watch · ${totalToday} today on your services.`
     else if (totalToday > 0) summaryText = `${g(totalToday)} today you can watch on your services.`
@@ -248,6 +294,19 @@ export default function App() {
         <button className="chip" onClick={() => setShowSports(true)}>
           🏅 {sports && sports.length ? `Sports (${visibleViewers.length})` : 'All sports'}
         </button>
+        <button className="chip" onClick={() => setShowTeams(true)}>
+          ⭐ {follow.count ? `My teams (${follow.count})` : 'Choose my teams'}
+        </button>
+        {follow.count > 0 && (
+          <button
+            className={`chip ${teamFilterActive ? 'on' : ''}`}
+            onClick={() => setTeamsOnly((v) => !v)}
+            aria-pressed={teamFilterActive}
+            title="Show only games involving the teams you follow"
+          >
+            {teamFilterActive ? '✓ ' : ''}My teams only
+          </button>
+        )}
         <button className="chip" onClick={() => setShowPicker(true)}>
           📺 {services.length ? `My services (${services.length})` : 'Choose my services'}
         </button>
@@ -282,6 +341,7 @@ export default function App() {
             phase={phase}
             tz={tz}
             filtered={filterActive}
+            teamFiltered={teamFilterActive}
             hideScores={hideScores}
           />
         ))}
@@ -294,7 +354,12 @@ export default function App() {
           asserted in app.test.jsx so it cannot drift back. */}
       <ArchivedShelf />
 
-      <UpcomingSchedule feeds={visibleFeeds} tz={tz} filtered={filterActive} />
+      <UpcomingSchedule
+        feeds={visibleFeeds}
+        tz={tz}
+        filtered={filterActive}
+        teamFiltered={teamFilterActive}
+      />
 
       <InstallShelf viewers={visibleViewers} />
 
@@ -305,6 +370,7 @@ export default function App() {
           onClose={() => setShowSports(false)}
         />
       )}
+      {showTeams && <TeamsPicker onClose={() => setShowTeams(false)} />}
       {showPicker && (
         <ServicesPicker
           selected={services}

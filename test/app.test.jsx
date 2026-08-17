@@ -333,6 +333,174 @@ describe('services + watch filter', () => {
   })
 })
 
+describe('my teams filter', () => {
+  // 'MIA' is followed; the default game() is AWY @ HME, so it is not.
+  const follow = (abbrs = ['MIA'], key = 'nba:followed') =>
+    localStorage.setItem(key, JSON.stringify(abbrs))
+  const mine = (over) => game({ homeAbbr: 'MIA', ...over })
+
+  const withGames = () =>
+    feedsFor({
+      nba: {
+        today: [mine({ id: 'mine' }), game({ id: 'theirs' })],
+        upcoming: [mine({ id: 'u-mine' }), game({ id: 'u-theirs' })],
+        next: mine({ id: 'u-mine' }),
+        yesterday: [mine({ id: 'y-mine' }), game({ id: 'y-theirs' })],
+      },
+    })
+
+  it('offers the toggle only once a team is followed', async () => {
+    show()
+    await settle()
+    expect(screen.getByText(/Choose my teams/)).toBeInTheDocument()
+    expect(screen.queryByText(/My teams only/)).not.toBeInTheDocument()
+  })
+
+  it('counts the teams followed in the viewer apps’ own stores', async () => {
+    // Nothing was ever starred on this page: these came from the NBA and Premier League
+    // apps, which share this origin's localStorage.
+    follow(['MIA', 'BOS'])
+    follow(['ARS'], 'pl:followed')
+    show()
+    await settle()
+    expect(screen.getByText(/My teams \(3\)/)).toBeInTheDocument()
+    expect(screen.getByText(/My teams only/)).toBeInTheDocument()
+  })
+
+  it('opens the picker from the chip', async () => {
+    show()
+    await settle()
+    fireEvent.click(screen.getByText(/Choose my teams/))
+    await settle()
+    expect(screen.getByRole('dialog', { name: 'My teams' })).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Done'))
+    await settle()
+    expect(screen.queryByRole('dialog', { name: 'My teams' })).not.toBeInTheDocument()
+  })
+
+  it('drops games involving none of my teams, and restores them when turned off', async () => {
+    follow()
+    fetchAllViewers.mockResolvedValue(withGames())
+    show()
+    await settle()
+    expect(screen.getByText('2 games today')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText(/My teams only/))
+    await settle()
+    expect(screen.getByText('1 game today')).toBeInTheDocument()
+    expect(screen.getByText(/1 game today for your teams\./)).toBeInTheDocument()
+    // The two-week breakdown and yesterday's results narrow with it.
+    expect(screen.getByText(/· 1 game for your teams/)).toBeInTheDocument()
+    expect(screen.getByText(/· 1 game ·/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText(/My teams only/))
+    await settle()
+    expect(screen.getByText('2 games today')).toBeInTheDocument()
+  })
+
+  it('remembers the toggle across a reload', async () => {
+    follow()
+    fetchAllViewers.mockResolvedValue(withGames())
+    const { unmount } = show()
+    await settle()
+    fireEvent.click(screen.getByText(/My teams only/))
+    await settle()
+    expect(localStorage.getItem('st:teamsOnly')).toBe('true')
+    unmount()
+    show()
+    await settle()
+    expect(screen.getByText('1 game today')).toBeInTheDocument()
+  })
+
+  it('names my teams as the next game’s reason', async () => {
+    follow()
+    fetchAllViewers.mockResolvedValue(
+      feedsFor({ nba: { upcoming: [mine({ id: 'u' })], next: mine({ id: 'u' }) } })
+    )
+    localStorage.setItem('st:teamsOnly', 'true')
+    show()
+    await settle()
+    expect(screen.getByText(/^Next for your teams: /)).toBeInTheDocument()
+  })
+
+  it('explains an empty result rather than implying no games exist', async () => {
+    follow()
+    fetchAllViewers.mockResolvedValue(feedsFor({ nba: { today: [game({ id: 'theirs' })] } }))
+    localStorage.setItem('st:teamsOnly', 'true')
+    const { container } = show()
+    await settle()
+    // Scoped: the empty ViewerCard carries the same sentence.
+    expect(container.querySelector('.summary').textContent).toMatch(
+      /No games for your teams in the next two weeks/
+    )
+    // Every card, not just the NBA one: none of the four has a game for a followed team.
+    expect(screen.getAllByText('Nothing for your teams in the next two weeks')).toHaveLength(
+      VIEWERS.length
+    )
+  })
+
+  it('mentions upcoming games when today is empty but the fortnight is not', async () => {
+    follow()
+    fetchAllViewers.mockResolvedValue(feedsFor({ nba: { upcoming: [mine({ id: 'u' })] } }))
+    localStorage.setItem('st:teamsOnly', 'true')
+    show()
+    await settle()
+    expect(
+      screen.getByText(/Nothing for your teams today\. 1 coming up in the next two weeks/)
+    ).toBeInTheDocument()
+  })
+
+  it('counts live games for my teams', async () => {
+    follow()
+    fetchAllViewers.mockResolvedValue(
+      feedsFor({ nba: { today: [mine({ id: 'l', state: 'in' })], live: 1 } })
+    )
+    localStorage.setItem('st:teamsOnly', 'true')
+    show()
+    await settle()
+    expect(screen.getByText(/1 game live now for your teams · 1 today\./)).toBeInTheDocument()
+  })
+
+  it('stacks with the services filter, and says both', async () => {
+    follow()
+    fetchAllViewers.mockResolvedValue(
+      feedsFor({
+        nba: {
+          today: [mine({ id: 'mine', broadcast: ['ESPN'] }), mine({ id: 'rsn', broadcast: ['MSG'] })],
+        },
+      })
+    )
+    localStorage.setItem('st:teamsOnly', 'true')
+    localStorage.setItem('st:services', JSON.stringify(['sling']))
+    localStorage.setItem('st:watchOnly', 'true')
+    show()
+    await settle()
+    // Sling carries ESPN but not MSG, and both games are my team's.
+    expect(
+      screen.getByText(/1 game today for your teams on your services\./)
+    ).toBeInTheDocument()
+  })
+
+  it('leaves the feed alone when the toggle is on but no team is followed', async () => {
+    fetchAllViewers.mockResolvedValue(withGames())
+    localStorage.setItem('st:teamsOnly', 'true')
+    show()
+    await settle()
+    expect(screen.getByText('2 games today')).toBeInTheDocument()
+  })
+
+  it('survives a feed with no yesterday or upcoming list', async () => {
+    follow()
+    fetchAllViewers.mockResolvedValue(
+      feedsFor({ nba: { today: [mine({ id: 'm' })], upcoming: undefined, yesterday: undefined } })
+    )
+    localStorage.setItem('st:teamsOnly', 'true')
+    show()
+    await settle()
+    expect(screen.getByText('1 game today')).toBeInTheDocument()
+  })
+})
+
 describe('spoiler-free mode', () => {
   it('toggles, persists, and hides scores in the cards', async () => {
     fetchAllViewers.mockResolvedValue(

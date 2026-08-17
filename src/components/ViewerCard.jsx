@@ -1,13 +1,24 @@
 import GameRow from './GameRow.jsx'
+import TeamLogo from './TeamLogo.jsx'
 import { formatDayTime } from '../utils/time.js'
 
 // One viewer's card. The whole card is a link into the deployed viewer (same tab, per
 // spec). Inside: the phase badge, a live indicator, and either today's games or the next
 // upcoming one. `feed` is the normalized { ok, today, live, next } from services/espn.
-export default function ViewerCard({ viewer, feed, phase, tz, filtered = false, hideScores = false }) {
+export default function ViewerCard({
+  viewer,
+  feed,
+  phase,
+  tz,
+  filtered = false,
+  teamFiltered = false,
+  hideScores = false,
+}) {
   const { today, live, next } = feed
   const hasToday = today.length > 0
   const net = next?.broadcast?.[0]
+  // Names whichever filters are narrowing this card, so an empty body says WHY it is empty.
+  const scope = `${teamFiltered ? ' for your teams' : ''}${filtered ? ' on your services' : ''}`
 
   return (
     <a className="card" href={viewer.url}>
@@ -45,8 +56,10 @@ export default function ViewerCard({ viewer, feed, phase, tz, filtered = false, 
           </>
         ) : next ? (
           <div className="card-next">
-            {filtered ? 'Next you can watch: ' : 'Next: '}
-            {next.awayAbbr || next.away} @ {next.homeAbbr || next.home}, {formatDayTime(next.tip, tz)}
+            {filtered ? 'Next you can watch: ' : teamFiltered ? 'Next for your teams: ' : 'Next: '}
+            <TeamLogo logo={next.awayLogo} size={14} />
+            {next.awayAbbr || next.away} @ <TeamLogo logo={next.homeLogo} size={14} />
+            {next.homeAbbr || next.home}, {formatDayTime(next.tip, tz)}
             {net && <span className="card-net">{net}</span>}
           </div>
         ) : !feed.ok ? (
@@ -55,9 +68,7 @@ export default function ViewerCard({ viewer, feed, phase, tz, filtered = false, 
           <div className="card-next dim">Couldn’t reach the scoreboard — open the viewer</div>
         ) : (
           <div className="card-next dim">
-            {filtered
-              ? 'Nothing on your services in the next two weeks'
-              : 'No games in the next two weeks'}
+            {scope ? `Nothing${scope} in the next two weeks` : 'No games in the next two weeks'}
           </div>
         )}
       </div>

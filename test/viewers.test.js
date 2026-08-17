@@ -31,6 +31,33 @@ describe('viewer registry', () => {
     }
   })
 
+  it('puts every viewer on the hub’s own origin', () => {
+    // Not cosmetic: one origin is exactly why the hub can share each app's follow list
+    // instead of keeping a private copy (see context/follow.jsx). A viewer moved to its own
+    // domain would silently stop syncing.
+    for (const v of ALL) expect(new URL(v.url).origin, v.id).toBe('https://ismayc.github.io')
+  })
+
+  it('maps every viewer to its app’s OWN follow key, uniquely', () => {
+    // These are the literal KEY constants in each app's src/context/follow.jsx, pinned here
+    // because nothing else can catch a typo: a wrong key does not error, it just orphans
+    // that sport's picks in a store no app reads.
+    expect(Object.fromEntries(ALL.map((v) => [v.id, v.followKey]))).toEqual({
+      nba: 'nba:followed',
+      nfl: 'nfl:followed',
+      wnba: 'wnba:followed',
+      epl: 'pl:followed', // note: NOT epl:followed, since the app's own prefix is `pl`
+      'mens-mm': 'mmm:followed',
+      'womens-mm': 'mmw:followed',
+      wwc: 'wwc:followed',
+      euros: 'euros:followed',
+      copa: 'copa:followed',
+      worldcup: 'wc2026:followed',
+    })
+    const keys = ALL.map((v) => v.followKey)
+    expect(new Set(keys).size).toBe(keys.length)
+  })
+
   it('viewerById resolves live AND archived viewers', () => {
     expect(viewerById.nba.name).toBe('NBA')
     expect(viewerById.wwc.name).toBe("Women's World Cup")

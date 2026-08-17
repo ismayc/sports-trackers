@@ -2,8 +2,9 @@ import { viewerById } from '../data/viewers.js'
 import { useFollow } from '../context/follow.jsx'
 import GameRow from './GameRow.jsx'
 
-// "My teams playing today." Filters every viewer's today games down to the hub's own
-// follow set, then deep-links each match into its viewer with ?team=ABBR — SINGULAR:
+// "My teams playing today." Filters every viewer's today games down to the follow set (which
+// is the viewers' own, shared through localStorage; see context/follow.jsx), then deep-links
+// each match into its viewer with ?team=ABBR, SINGULAR:
 // that is the param every viewer's urlState actually reads (a ?teams= list is silently
 // ignored). Only renders when the user has starred at least one team.
 export default function MyTeams({ feeds, tz, hideScores = false }) {
@@ -36,7 +37,7 @@ export default function MyTeams({ feeds, tz, hideScores = false }) {
                   <span aria-hidden="true">{v.emoji}</span> {picks.join(', ')} →
                 </a>
                 <div className="myteams-row">
-                  <GameRow viewerId={viewerId} game={game} tz={tz} hideScores={hideScores} />
+                  <GameRow viewerId={viewerId} game={game} tz={tz} hideScores={hideScores} names />
                 </div>
               </div>
             )

@@ -52,6 +52,13 @@ describe('ViewerCard', () => {
     expect(screen.getByText('TNT')).toBeInTheDocument()
   })
 
+  it('puts a crest beside each abbreviation on the "Next" line', () => {
+    const { container } = show(
+      feed({ next: game({ awayLogo: 'away.png', homeLogo: 'home.png' }) })
+    )
+    expect(container.querySelectorAll('img.team-logo')).toHaveLength(2)
+  })
+
   it('omits the network when the next game has no broadcast', () => {
     const { container } = show(feed({ next: game() }))
     expect(container.querySelector('.card-net')).toBeNull()
@@ -71,6 +78,25 @@ describe('ViewerCard', () => {
     it('says so when nothing is watchable, rather than implying no games exist', () => {
       show(feed(), { filtered: true })
       expect(screen.getByText('Nothing on your services in the next two weeks')).toBeInTheDocument()
+    })
+  })
+
+  describe('when the my-teams filter is engaged', () => {
+    it('labels the next game as one of yours', () => {
+      show(feed({ next: game() }), { teamFiltered: true })
+      expect(screen.getByText(/^Next for your teams: /)).toBeInTheDocument()
+    })
+
+    it('says which filter emptied the card', () => {
+      show(feed(), { teamFiltered: true })
+      expect(screen.getByText('Nothing for your teams in the next two weeks')).toBeInTheDocument()
+    })
+
+    it('names BOTH filters when both are on', () => {
+      show(feed(), { teamFiltered: true, filtered: true })
+      expect(
+        screen.getByText('Nothing for your teams on your services in the next two weeks')
+      ).toBeInTheDocument()
     })
   })
 

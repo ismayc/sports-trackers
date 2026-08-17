@@ -25,6 +25,12 @@
 // `college: true` viewers get &groups=50&seasontype=3 appended AND the March-Madness
 //   headline filter applied (see services/espn.js) — the seasontype=3 window also carries
 //   NIT / Crown / WBIT games, which are NOT the tournament.
+// `followKey` is the viewer app's OWN localStorage key for its followed teams. Every app in
+//   the family is deployed under https://ismayc.github.io/<app>/, which is the same origin as
+//   this hub, so the hub reads and writes those keys directly instead of keeping a private
+//   copy. Starring a team here follows it there and back again. See context/follow.jsx.
+//   ARCHIVED viewers carry one too: their picks are never shown here, but the hub must not
+//   drop a key it rewrites.
 
 export const VIEWERS = [
   {
@@ -34,6 +40,7 @@ export const VIEWERS = [
     espnPath: 'basketball/nba',
     url: 'https://ismayc.github.io/nba-schedule/',
     calendarHost: 'the-nba-schedule.netlify.app',
+    followKey: 'nba:followed',
     kind: 'league',
     // Regular season Oct–Apr; playoffs Apr–Jun. Wraps the new year (start>end month).
     season: { startMonth: 10, startDay: 21, endMonth: 6 },
@@ -46,6 +53,7 @@ export const VIEWERS = [
     espnPath: 'football/nfl',
     url: 'https://ismayc.github.io/nfl-schedule/',
     calendarHost: 'the-nfl-schedule.netlify.app',
+    followKey: 'nfl:followed',
     kind: 'league',
     // Sep through the Feb Super Bowl; playoffs Jan–Feb.
     season: { startMonth: 9, startDay: 4, endMonth: 2 },
@@ -58,6 +66,7 @@ export const VIEWERS = [
     espnPath: 'basketball/wnba',
     url: 'https://ismayc.github.io/wnba-schedule/',
     calendarHost: 'the-wnba-schedule.netlify.app',
+    followKey: 'wnba:followed',
     kind: 'league',
     // May–Oct, within one calendar year; playoffs Sep–Oct.
     season: { startMonth: 5, startDay: 1, endMonth: 10 },
@@ -70,6 +79,7 @@ export const VIEWERS = [
     espnPath: 'soccer/eng.1',
     url: 'https://ismayc.github.io/premier-league/',
     calendarHost: 'premier-league-viewer.netlify.app',
+    followKey: 'pl:followed',
     kind: 'league',
     // Aug–May, wraps the new year. No playoff round — it's a table to the final whistle.
     season: { startMonth: 8, startDay: 15, endMonth: 5 },
@@ -103,6 +113,7 @@ export const ARCHIVED_VIEWERS = [
     espnPath: 'basketball/mens-college-basketball',
     url: 'https://ismayc.github.io/mens-march-madness/',
     calendarHost: 'mens-march-madness.netlify.app',
+    followKey: 'mmm:followed',
     kind: 'tournament',
     tournamentLabel: 'Tournament',
     college: true,
@@ -119,6 +130,7 @@ export const ARCHIVED_VIEWERS = [
     espnPath: 'basketball/womens-college-basketball',
     url: 'https://ismayc.github.io/womens-march-madness/',
     calendarHost: 'womens-march-madness.netlify.app',
+    followKey: 'mmw:followed',
     kind: 'tournament',
     tournamentLabel: 'Tournament',
     college: true,
@@ -134,6 +146,7 @@ export const ARCHIVED_VIEWERS = [
     espnPath: 'soccer/fifa.wwc',
     url: 'https://ismayc.github.io/womens-world-cup-viewer/',
     calendarHost: 'womens-world-cup-viewer.netlify.app',
+    followKey: 'wwc:followed',
     kind: 'tournament',
     tournamentLabel: 'Tournament',
     // The 2023 window (20 Jul – 20 Aug, Australia & New Zealand). Every `window` in this
@@ -150,6 +163,7 @@ export const ARCHIVED_VIEWERS = [
     espnPath: 'soccer/uefa.euro',
     url: 'https://ismayc.github.io/football-euros-viewer/',
     calendarHost: 'football-euros-viewer.netlify.app',
+    followKey: 'euros:followed',
     kind: 'tournament',
     tournamentLabel: 'Tournament',
     window: { start: { m: 6, d: 14 }, end: { m: 7, d: 14 } },
@@ -163,6 +177,7 @@ export const ARCHIVED_VIEWERS = [
     espnPath: 'soccer/conmebol.america',
     url: 'https://ismayc.github.io/copa-america-viewer/',
     calendarHost: 'copa-america-viewer.netlify.app',
+    followKey: 'copa:followed',
     kind: 'tournament',
     tournamentLabel: 'Tournament',
     window: { start: { m: 6, d: 20 }, end: { m: 7, d: 14 } },
@@ -176,6 +191,7 @@ export const ARCHIVED_VIEWERS = [
     espnPath: 'soccer/fifa.world',
     url: 'https://ismayc.github.io/world-cup-viewer/',
     calendarHost: 'world-cup-viewer.netlify.app',
+    followKey: 'wc2026:followed',
     kind: 'tournament',
     tournamentLabel: 'Tournament',
     window: { start: { m: 6, d: 11 }, end: { m: 7, d: 19 } },

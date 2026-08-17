@@ -22,6 +22,10 @@
   --soon: #6aa9ff;
   --cold: #8894a6;
 
+  /* Backdrop for a team crest in dark mode: ESPN's marks are drawn for a light background,
+     so without this the darker ones vanish. Nothing behind them in light mode. */
+  --logo-chip: rgba(255, 255, 255, 0.92);
+
   --radius: 14px;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.32);
   --page-bg: radial-gradient(1100px 560px at 85% -12%, #13322e 0%, var(--bg) 58%);
@@ -45,6 +49,8 @@
   --on: #17924f;
   --soon: #2563eb;
   --cold: #6b7280;
+
+  --logo-chip: transparent;
 
   --shadow: 0 4px 16px rgba(20, 35, 60, 0.1);
   --page-bg: radial-gradient(1100px 560px at 85% -12%, #dcefec 0%, var(--bg) 58%);
@@ -333,6 +339,22 @@ h3 {
   align-items: center;
   gap: 6px;
   min-width: 0;
+}
+/* Team crests, beside the name in a row and on the "Next:" line. ESPN ships one usable mark
+   per team, drawn for a light background, so in dark mode every crest sits on a pale chip
+   rather than trying to swap in a dark variant that four WNBA clubs simply do not have. See
+   components/TeamLogo.jsx for what was tried first. */
+.team-logo {
+  flex: none;
+  object-fit: contain;
+  vertical-align: -3px;
+  margin-right: 4px;
+}
+:root[data-theme='dark'] .team-logo,
+:root[data-theme='dark'] .tp-logo {
+  background: var(--logo-chip);
+  border-radius: 3px;
+  padding: 1px;
 }
 .row-line {
   font-variant-numeric: tabular-nums;
@@ -978,4 +1000,53 @@ h3 {
 }
 .svc-sport {
   font-weight: 600;
+}
+
+/* ── My teams picker ────────────────────────────────────────────────── */
+/* Wider than the services dialog: this one holds about 97 teams across four sports, and at
+   460px the two-column grid drops to one and the scroll gets silly. */
+.modal-wide {
+  max-width: 640px;
+}
+.tp-search {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+.tp-search::placeholder {
+  color: var(--text-faint);
+}
+.tp-search:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.tp-status {
+  font-size: 13px;
+  margin: 0 0 10px;
+}
+.svc-group legend .tp-legend-icon {
+  border-radius: 4px;
+  vertical-align: -3px;
+  margin-right: 5px;
+}
+.tp-logo {
+  flex: none;
+  object-fit: contain;
+}
+/* Team names run long ("Golden State Valkyries", "Washington Commanders"), so these tiles
+   get more room than a service's one-word label needs. `break-word`, not `anywhere`: the
+   latter split "Washington" across two lines mid-word. */
+.modal-wide .svc-grid {
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+}
+.tp-name {
+  min-width: 0;
+  overflow-wrap: break-word;
 }

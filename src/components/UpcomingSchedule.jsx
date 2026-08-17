@@ -37,7 +37,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 // ("Schedule") and a calendar week grid ("Week"), like the viewers' own tabs. The
 // choice is remembered per device. `feeds` arrives already filtered by the sports
 // picker and the "on my services" toggle, so this section always agrees with the cards.
-export default function UpcomingSchedule({ feeds, tz, filtered = false }) {
+export default function UpcomingSchedule({ feeds, tz, filtered = false, teamFiltered = false }) {
   const follow = useFollow()
   const [mode, setMode] = useState(() => {
     try {
@@ -108,6 +108,7 @@ export default function UpcomingSchedule({ feeds, tz, filtered = false }) {
           Next two weeks{' '}
           <span className="dim">
             · {n} game{n === 1 ? '' : 's'}
+            {teamFiltered ? ' for your teams' : ''}
             {filtered ? ' on your services' : ''}
           </span>
         </h2>
@@ -155,7 +156,7 @@ export default function UpcomingSchedule({ feeds, tz, filtered = false }) {
                       {v.name}
                     </span>
                     <div className="up-row">
-                      <GameRow viewerId={viewerId} game={game} tz={tz} />
+                      <GameRow viewerId={viewerId} game={game} tz={tz} names />
                     </div>
                   </a>
                 )

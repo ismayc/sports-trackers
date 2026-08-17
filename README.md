@@ -58,9 +58,15 @@ parts, not UTC), and renders:
 - a **card per viewer** — today's game count, a pulsing live indicator, the next upcoming
   game when nothing's on, and a season-phase badge (In season / Playoffs / Tournament /
   Starts in Nd / Offseason);
-- a **My teams playing today** section — star any team in the listings and the hub tracks
-  it in *its own* `localStorage` (`st:follow`), then deep-links matches into their viewer
-  with `?team=ABBR` (singular — a `?teams=` list is silently ignored by every viewer);
+- a **My teams** picker and a **My teams playing today** section. Pick your clubs sport by
+  sport (searchable, with crests), or star them straight off any game row. The follow set is
+  NOT the hub's own: every app in the family is served from `ismayc.github.io`, so the hub
+  reads and writes each viewer's own key (`nba:followed`, `pl:followed`, …). A team picked
+  here is followed in that viewer the next time you open it, and a club followed in the
+  Premier League app is already starred when you come back. **My teams only** then narrows
+  the whole page (cards, yesterday, the two-week breakdown) to their games, and each match
+  deep-links into its viewer with `?team=ABBR` (singular; a `?teams=` list is silently
+  ignored by every viewer);
 - a **Yesterday** recap — collapsed by default (the page's job is what's on now):
   yesterday's finals with scores across the visible viewers, one press away. Follows the
   sports picker but not the services filter — a result isn't hidden because you lack the
@@ -72,7 +78,10 @@ parts, not UTC), and renders:
   It respects both selections below, so it always agrees with the cards;
 - **Sports** and **My services** pickers — choose which viewers to show, and optionally
   filter everything (cards, my-teams, the two-week breakdown) down to games on the
-  streaming/TV services you actually have;
+  streaming/TV services you actually have. Stacks with the my-teams filter, and the page
+  says which of the two emptied a card;
+- **team crests** beside every matchup, and full club names in the full-width rows (a
+  viewer card's 259px column keeps the abbreviation);
 - **spoiler-free mode** — the family's 🙈 toggle: matchups and Final/Live states stay,
   the numbers go (including yesterday's recap), persisted per device;
 - a **timezone picker** — the family's one-tap zone list; a shared link's `?tz=` wins
@@ -122,7 +131,7 @@ npm run test:watch      # watch mode
 npm run coverage:badge  # tests + coverage, and refresh the badge endpoint
 ```
 
-**Tests: 256 across 16 files, at 100% statements, branches, functions and lines.** Unlike
+**Tests: 331 across 19 files, at 100% statements, branches, functions and lines.** Unlike
 the sibling viewers — which round the statement figure for their badge — this repo is
 literally 100% on every metric, and the two places that made that awkward were fixed rather
 than excused: an unreachable `?? 0` in the card sort was removed in favour of a test pinning

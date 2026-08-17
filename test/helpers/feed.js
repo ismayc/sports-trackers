@@ -11,6 +11,8 @@ export function espnEvent({
   home = 'Home Team',
   awayAbbr = 'AWY',
   homeAbbr = 'HME',
+  awayLogo = undefined,
+  homeLogo = undefined,
   awayScore = null,
   homeScore = null,
   state = 'pre',
@@ -37,8 +39,16 @@ export function espnEvent({
           competitors !== undefined
             ? competitors
             : [
-                { homeAway: 'home', score: homeScore, team: { displayName: home, abbreviation: homeAbbr } },
-                { homeAway: 'away', score: awayScore, team: { displayName: away, abbreviation: awayAbbr } },
+                {
+                  homeAway: 'home',
+                  score: homeScore,
+                  team: { displayName: home, abbreviation: homeAbbr, ...(homeLogo ? { logo: homeLogo } : {}) },
+                },
+                {
+                  homeAway: 'away',
+                  score: awayScore,
+                  team: { displayName: away, abbreviation: awayAbbr, ...(awayLogo ? { logo: awayLogo } : {}) },
+                },
               ],
       },
     ],
@@ -54,6 +64,10 @@ export function game(over = {}) {
     away: 'Away Team',
     homeAbbr: 'HME',
     awayAbbr: 'AWY',
+    // Null by default: most tests are about text, and a crest would only add noise. The
+    // logo tests pass their own hrefs.
+    homeLogo: null,
+    awayLogo: null,
     state: 'pre',
     score: null,
     statusLabel: '7:00 PM',

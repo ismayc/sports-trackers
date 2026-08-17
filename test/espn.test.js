@@ -86,6 +86,38 @@ describe('normalize', () => {
     })
   })
 
+  it('carries each side’s crest, and null when ESPN omits one', async () => {
+    stubFetch([
+      espnEvent({
+        id: 'crest',
+        date: '2026-07-29T23:00Z',
+        awayLogo: 'https://a.espncdn.com/i/teamlogos/nba/500/bos.png',
+      }),
+    ])
+    const f = await run()
+    expect(f.today[0].awayLogo).toBe('https://a.espncdn.com/i/teamlogos/nba/500/bos.png')
+    // Null, not undefined: the row renders no logo rather than a broken image.
+    expect(f.today[0].homeLogo).toBeNull()
+  })
+
+  it('normalizes away the /scoreboard/ crest, which is drawn in the opposite ink', async () => {
+    // The feed hands out both forms and they are NOT interchangeable: `500/sea.png` is the
+    // dark mark and `500/scoreboard/sea.png` the light one, so a row that mixed them had
+    // invisible logos either way. See services/espn.js teamLogo.
+    stubFetch([
+      espnEvent({
+        id: 'mixed',
+        date: '2026-07-29T23:00Z',
+        awayLogo: 'https://a.espncdn.com/i/teamlogos/wnba/500/scoreboard/sea.png',
+        homeLogo: 'https://a.espncdn.com/i/teamlogos/wnba/500/chi.png',
+      }),
+    ])
+    const f = await run()
+    expect(f.today[0].awayLogo).toBe('https://a.espncdn.com/i/teamlogos/wnba/500/sea.png')
+    // The already-plain one is left alone.
+    expect(f.today[0].homeLogo).toBe('https://a.espncdn.com/i/teamlogos/wnba/500/chi.png')
+  })
+
   it('reads a score only once the game is live or complete', async () => {
     stubFetch([
       espnEvent({ id: 'live', date: '2026-07-29T22:00Z', state: 'in', awayScore: '55', homeScore: '60' }),

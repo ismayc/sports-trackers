@@ -23,11 +23,13 @@ describe('ViewerCard', () => {
     expect(container.querySelector('img')).toHaveAttribute('src', '/icons/nba.png')
   })
 
-  it('lists today\'s games with a count', () => {
-    show(feed({ today: [game({ id: 'a' }), game({ id: 'b', awayAbbr: 'XXX' })] }))
+  it('lists today\'s games with a count, naming the teams', () => {
+    // A card names its teams too. It is the one place that cannot take the FULL name (the
+    // 4-across column is 259px), which is why the nickname is what the feed carries.
+    show(feed({ today: [game({ id: 'a' }), game({ id: 'b', awayShort: 'Xs' })] }))
     expect(screen.getByText('2 games today')).toBeInTheDocument()
-    expect(screen.getByText('AWY @ HME')).toBeInTheDocument()
-    expect(screen.getByText('XXX @ HME')).toBeInTheDocument()
+    expect(screen.getByText('Away @ Home')).toBeInTheDocument()
+    expect(screen.getByText('Xs @ Home')).toBeInTheDocument()
   })
 
   it('uses the singular for one game', () => {
@@ -48,7 +50,7 @@ describe('ViewerCard', () => {
   it('falls back to the next game when nothing is on today', () => {
     show(feed({ next: game({ tip: '2026-08-04T23:00:00Z', broadcast: ['TNT'] }) }))
     expect(screen.getByText(/^Next: /)).toBeInTheDocument()
-    expect(screen.getByText(/AWY @ HME/)).toBeInTheDocument()
+    expect(screen.getByText(/Away @ Home/)).toBeInTheDocument()
     expect(screen.getByText('TNT')).toBeInTheDocument()
   })
 
@@ -102,7 +104,7 @@ describe('ViewerCard', () => {
 
   it('passes spoiler-free mode down to the rows', () => {
     show(feed({ today: [game({ state: 'post', score: [99, 101], statusLabel: 'Final' })] }), { hideScores: true })
-    expect(screen.getByText('AWY @ HME')).toBeInTheDocument()
+    expect(screen.getByText('Away @ Home')).toBeInTheDocument()
     expect(screen.queryByText(/101/)).not.toBeInTheDocument()
   })
 })

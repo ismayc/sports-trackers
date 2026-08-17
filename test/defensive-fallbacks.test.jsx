@@ -80,12 +80,12 @@ describe('component name fallbacks', () => {
     expect(screen.getByText('Away Team 3 @ Home Team 4')).toBeInTheDocument()
   })
 
-  it('ViewerCard uses full names for the next game when abbreviations are missing', () => {
+  it('ViewerCard uses full names for the next game when the nickname is missing', () => {
     render(
       <FollowProvider>
         <ViewerCard
           viewer={{ id: 'nba', name: 'NBA', emoji: '🏀', url: 'https://x.example/' }}
-          feed={feed({ next: game({ awayAbbr: '', homeAbbr: '' }) })}
+          feed={feed({ next: game({ awayShort: '', homeShort: '' }) })}
           phase={{ label: 'In season', tone: 'on' }}
           tz="UTC"
         />

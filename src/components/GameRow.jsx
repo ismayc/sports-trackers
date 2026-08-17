@@ -8,14 +8,15 @@ import TeamLogo from './TeamLogo.jsx'
 // hideScores is the family's spoiler-free mode: the matchup and state stay, the numbers
 // go (a "Final" pill is not a spoiler; 105–102 is).
 //
-// `names` names the clubs instead of abbreviating them ("Wings", not "DAL"). It is on
-// wherever the row spans the page (the My teams list, yesterday's results, the two-week
-// breakdown) and off inside a viewer card, where the 4-across desktop column is 259px.
+// `names` names the clubs instead of abbreviating them ("Wings", not "DAL"). Every row that
+// lists games passes it: the cards, the My teams list, yesterday's results and the two-week
+// breakdown. Nothing turns it off today; it stays a prop because the abbreviation is the
+// right answer for anything tighter than a card.
 //
-// The NICKNAME, not the full name. `.row-line` is one nowrap line that ellipsizes, so on a
-// phone "Portland Fire 88 @ Phoenix Mercury 85" was cut off mid-word, which reads worse than
-// either alternative. "Fire 88 @ Mercury 85" fits. The full name is still the row's title
-// text, and the abbreviation is still what a card shows.
+// The NICKNAME, not the full name, and that is what makes it fit a card at all. `.row-line`
+// is one nowrap line, so on a phone "Portland Fire 88 @ Phoenix Mercury 85" was cut off
+// mid-word. "Fire 88 @ Mercury 85" fits, and inside a card the line wraps rather than
+// ellipsizing (see `.card .row-line` in index.css). The full name is still the row's title.
 export default function GameRow({ viewerId, game, tz, hideScores = false, names = false }) {
   const follow = useFollow()
   const { away, home, awayAbbr, homeAbbr, awayShort, homeShort, score, state, statusLabel, tip, broadcast } =

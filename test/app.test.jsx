@@ -510,11 +510,12 @@ describe('spoiler-free mode', () => {
     )
     show()
     await settle()
-    expect(screen.getByText('AWY 99 @ HME 101')).toBeInTheDocument()
+    // Cards name the teams too, by nickname: "Away" / "Home" in the fixture.
+    expect(screen.getByText('Away 99 @ Home 101')).toBeInTheDocument()
 
     fireEvent.click(screen.getByText(/Hide scores/))
     await settle()
-    expect(screen.getByText('AWY @ HME')).toBeInTheDocument()
+    expect(screen.getByText('Away @ Home')).toBeInTheDocument()
     expect(screen.queryByText(/101/)).not.toBeInTheDocument()
     expect(screen.getByText(/Scores hidden/)).toBeInTheDocument()
     expect(JSON.parse(localStorage.getItem('st:hideScores'))).toBe(true)

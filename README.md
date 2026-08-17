@@ -80,10 +80,11 @@ parts, not UTC), and renders:
   filter everything (cards, my-teams, the two-week breakdown) down to games on the
   streaming/TV services you actually have. Stacks with the my-teams filter, and the page
   says which of the two emptied a card;
-- **team crests** beside every matchup, and club names in the full-width rows. The nickname,
-  not the full name ("Fire 88 @ Mercury 85"), because `.row-line` is one nowrap line and the
-  full form was cut off mid-word on a phone; below 580px those rows stack rather than
-  truncate. A viewer card's 259px column keeps the abbreviation;
+- **team crests and club names** on every matchup, cards included: "Wings @ Valkyries", not
+  "DAL @ GS". The nickname rather than the full name, because `.row-line` is one nowrap line
+  and "Portland Fire 88 @ Phoenix Mercury 85" was cut off mid-word on a phone. Nothing
+  truncates at any width: a card's line wraps to a second line, and below 580px the
+  full-width rows stack;
 - **spoiler-free mode** — the family's 🙈 toggle: matchups and Final/Live states stay,
   the numbers go (including yesterday's recap), persisted per device;
 - a **timezone picker** — the family's one-tap zone list; a shared link's `?tz=` wins

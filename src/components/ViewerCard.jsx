@@ -50,7 +50,14 @@ export default function ViewerCard({
             </div>
             <div className="rows">
               {today.map((g) => (
-                <GameRow key={g.id} viewerId={viewer.id} game={g} tz={tz} hideScores={hideScores} />
+                <GameRow
+                  key={g.id}
+                  viewerId={viewer.id}
+                  game={g}
+                  tz={tz}
+                  hideScores={hideScores}
+                  names
+                />
               ))}
             </div>
           </>
@@ -58,8 +65,8 @@ export default function ViewerCard({
           <div className="card-next">
             {filtered ? 'Next you can watch: ' : teamFiltered ? 'Next for your teams: ' : 'Next: '}
             <TeamLogo logo={next.awayLogo} size={14} />
-            {next.awayAbbr || next.away} @ <TeamLogo logo={next.homeLogo} size={14} />
-            {next.homeAbbr || next.home}, {formatDayTime(next.tip, tz)}
+            {next.awayShort || next.away} @ <TeamLogo logo={next.homeLogo} size={14} />
+            {next.homeShort || next.home}, {formatDayTime(next.tip, tz)}
             {net && <span className="card-net">{net}</span>}
           </div>
         ) : !feed.ok ? (

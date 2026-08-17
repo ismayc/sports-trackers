@@ -193,26 +193,13 @@ h3 {
       the practical effect today is that a card row never shows the chip at any tier; the
       threshold is kept rather than hard-coded to `display: none` so it comes back on its own if
       cards ever get wider (two across a full 1080px shell would be a 533px card). */
-@container card (max-width: 420px) {
-  .row-net {
-    display: none;
-  }
-}
-
-/* 2. Below a ~334px card there is no room for both halves even without the chip, so stack.
-      Costs a line of height on cards that have games; never truncates. Same shape `.up-item`
-      takes at 560px. Verified in Chrome with a live game at all four tiers (251 / 354 / 375 /
-      425px cards): nothing clipped, and only the 251px one stacks. */
-@container card (max-width: 300px) {
-  .row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 3px;
-  }
-  .row-right {
-    justify-content: flex-end;
-  }
-}
+/* The rules themselves live further down, immediately after `.row`. They have to: a
+   container query adds no specificity, so `align-items: stretch` here lost to the plain
+   `.row { align-items: center }` below and the row stacked WITHOUT stretching. That is not
+   cosmetic. An unstretched `.row-teams` is sized by its own content, so a long matchup
+   overflowed the card sideways instead of ellipsizing, which is how "Trail Blazers 118 @
+   Timberwolves 121" ended up hanging out of a 259px card. Found 2026-08-17, when naming the
+   clubs made the lines long enough to notice. */
 
 .card {
   display: block;
@@ -361,6 +348,45 @@ h3 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Inside a CARD the matchup wraps instead of ellipsizing. Naming the clubs made the line long
+   enough that no current card tier can hold the worst case on one line: "Trail Blazers 118 @
+   Timberwolves 121" needs 263px of text plus two crests, two stars and the status pill, which
+   works out at a card of about 457px, wider than the 425px two-across. Measured at all three
+   tiers on 2026-08-17. Two lines cost height; an ellipsis costs the one thing the row exists
+   to say. The full-width rows elsewhere keep the single nowrap line, since they have the room
+   until they stack at 580px. */
+.card .row-line {
+  white-space: normal;
+}
+
+/* The two narrow-card rules promised up in the grid section. AFTER `.row`, on purpose: see
+   the note there.
+
+   1. The network chip goes first, being the least useful part of the row and repeated on the
+      card's "Next:" line and against every game in the two-week list. */
+@container card (max-width: 420px) {
+  .row-net {
+    display: none;
+  }
+}
+
+/* 2. Below a ~334px card there is no room for both halves even without the chip, so stack.
+      Costs a line of height on cards that have games; never truncates. Same shape `.up-item`
+      takes at 560px. The line WRAPS in this state rather than ellipsizing: the rows name the
+      clubs now, and "Trail Blazers 118 @ Timberwolves 121" needs 263px against the ~225px a
+      4-across desktop card can give it. Two lines cost height; an ellipsis costs the one
+      thing the row exists to say. */
+@container card (max-width: 300px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+  }
+  .row-right {
+    justify-content: flex-end;
+  }
 }
 
 .star {

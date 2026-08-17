@@ -8,14 +8,18 @@ import TeamLogo from './TeamLogo.jsx'
 // hideScores is the family's spoiler-free mode: the matchup and state stay, the numbers
 // go (a "Final" pill is not a spoiler; 105–102 is).
 //
-// `names` spells the clubs out ("Chicago Sky") instead of abbreviating them ("CHI"). It is on
+// `names` names the clubs instead of abbreviating them ("Wings", not "DAL"). It is on
 // wherever the row spans the page (the My teams list, yesterday's results, the two-week
-// breakdown) and off inside a viewer card, where the 4-across desktop column is 259px and a
-// pair of full names would wrap to three lines. The abbreviation is still what a card shows,
-// and the full name has always been the row's title text either way.
+// breakdown) and off inside a viewer card, where the 4-across desktop column is 259px.
+//
+// The NICKNAME, not the full name. `.row-line` is one nowrap line that ellipsizes, so on a
+// phone "Portland Fire 88 @ Phoenix Mercury 85" was cut off mid-word, which reads worse than
+// either alternative. "Fire 88 @ Mercury 85" fits. The full name is still the row's title
+// text, and the abbreviation is still what a card shows.
 export default function GameRow({ viewerId, game, tz, hideScores = false, names = false }) {
   const follow = useFollow()
-  const { away, home, awayAbbr, homeAbbr, score, state, statusLabel, tip, broadcast } = game
+  const { away, home, awayAbbr, homeAbbr, awayShort, homeShort, score, state, statusLabel, tip, broadcast } =
+    game
   const net = broadcast?.[0]
   const showScore = score && !hideScores
 
@@ -30,12 +34,13 @@ export default function GameRow({ viewerId, game, tz, hideScores = false, names 
 
   // Each side is one text node so the line still reads "AWY 3 @ HME 4" as a whole; the
   // crests sit between them and add nothing to the text.
-  const side = (abbr, name, points) => {
-    const who = (names ? name : abbr) || name || abbr
+  // Falls back through what the feed actually sent, so a team with no nickname still reads.
+  const side = (abbr, short, full, points) => {
+    const who = (names ? short || full : abbr) || full || abbr
     return `${who}${points === undefined ? '' : ` ${points}`}`
   }
-  const awaySide = side(awayAbbr, away, showScore ? score[0] : undefined)
-  const homeSide = side(homeAbbr, home, showScore ? score[1] : undefined)
+  const awaySide = side(awayAbbr, awayShort, away, showScore ? score[0] : undefined)
+  const homeSide = side(homeAbbr, homeShort, home, showScore ? score[1] : undefined)
 
   return (
     <div className="row">

@@ -636,6 +636,31 @@ h3 {
   }
 }
 
+/* Stack the FULL-WIDTH rows on a phone, the same trade the narrow card rows make above: a
+   line of height instead of a truncated matchup. Naming the clubs by nickname rather than in
+   full bought most of the room back, but not all of it, because the row also carries a star
+   each side, both crests, the network chip and the state pill.
+
+   MEASURED in Chrome on 2026-08-17, against yesterday's three WNBA finals: nothing clips at a
+   580px viewport, and at 560 two of the three lose the end of the home side ("Fever 95 @
+   Drea…"). Hence the threshold, which is deliberately 20px wider than the `.up-item` rule
+   above, since that one is about where the sport label stops fitting beside the row, which is
+   a different question. */
+@media (max-width: 580px) {
+  .myteams .row,
+  .recap .row,
+  .up-item .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+  }
+  .myteams .row-right,
+  .recap .row-right,
+  .up-item .row-right {
+    justify-content: flex-end;
+  }
+}
+
 /* ── Install / subscribe shelf ──────────────────────────────────────── */
 .shelf {
   margin-top: 30px;
@@ -1045,6 +1070,14 @@ h3 {
    latter split "Washington" across two lines mid-word. */
 .modal-wide .svc-grid {
   grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+}
+/* Keep TWO columns on a phone. At 168px the grid falls to one column inside a 358px dialog,
+   which turns 97 teams into a ~2900px scroll; 132px fits two even on a 320px screen, and a
+   name that no longer fits on one line just wraps inside its tile. */
+@media (max-width: 580px) {
+  .modal-wide .svc-grid {
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  }
 }
 .tp-name {
   min-width: 0;

@@ -86,6 +86,35 @@ describe('normalize', () => {
     })
   })
 
+  it('carries each side’s nickname, for the full-width rows', async () => {
+    // shortDisplayName is unique within each of the four live leagues and at most 13
+    // characters, which is what keeps a phone row from ellipsizing mid-word.
+    stubFetch([
+      espnEvent({
+        id: 'nick',
+        date: '2026-07-29T23:00Z',
+        away: 'Portland Fire',
+        awayShort: 'Fire',
+        home: 'Phoenix Mercury',
+        homeShort: 'Mercury',
+      }),
+    ])
+    const f = await run()
+    expect(f.today[0]).toMatchObject({
+      away: 'Portland Fire',
+      awayShort: 'Fire',
+      home: 'Phoenix Mercury',
+      homeShort: 'Mercury',
+    })
+  })
+
+  it('leaves the nickname empty when the feed has none, rather than guessing', async () => {
+    stubFetch([espnEvent({ id: 'plain', date: '2026-07-29T23:00Z' })])
+    const f = await run()
+    // The row falls back to the full name; see components/GameRow.
+    expect(f.today[0].awayShort).toBe('')
+  })
+
   it('carries each side’s crest, and null when ESPN omits one', async () => {
     stubFetch([
       espnEvent({

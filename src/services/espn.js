@@ -103,6 +103,13 @@ function normalize(ev, v) {
     tip: ev.date, // absolute ISO instant
     home: home.team?.displayName || home.team?.shortDisplayName || home.team?.name || '',
     away: away.team?.displayName || away.team?.shortDisplayName || away.team?.name || '',
+    // The nickname on its own: "Wings", not "Dallas Wings". What the full-width rows show,
+    // because the full name ellipsized on a phone, which is worse than either. ESPN's
+    // shortDisplayName is unique within each of the four live leagues (checked team by team
+    // on 2026-08-17), at most 13 characters ("Trail Blazers"), and for soccer it keeps the
+    // club rather than the city: "Man United", "Nottm Forest", "Bournemouth".
+    homeShort: home.team?.shortDisplayName || home.team?.name || '',
+    awayShort: away.team?.shortDisplayName || away.team?.name || '',
     homeAbbr: home.team?.abbreviation || '',
     awayAbbr: away.team?.abbreviation || '',
     // The crest each row shows beside the team. Null when ESPN omits it, which the row

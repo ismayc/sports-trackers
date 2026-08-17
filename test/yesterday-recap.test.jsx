@@ -60,11 +60,11 @@ describe('YesterdayRecap', () => {
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
     expect(toggle).toHaveTextContent('▾')
-    // Full names, not abbreviations: these rows span the page, unlike a card's.
-    expect(screen.getByText('Away Team 99 @ Home Team 101')).toBeInTheDocument()
+    // Named, not abbreviated: these rows span the page, unlike a card's.
+    expect(screen.getByText('Away 99 @ Home 101')).toBeInTheDocument()
 
     fireEvent.click(toggle)
-    expect(screen.queryByText('Away Team 99 @ Home Team 101')).not.toBeInTheDocument()
+    expect(screen.queryByText('Away 99 @ Home 101')).not.toBeInTheDocument()
   })
 
   it('sorts across viewers chronologically and links each row into its viewer', () => {
@@ -84,7 +84,7 @@ describe('YesterdayRecap', () => {
       hideScores: true,
     })
     fireEvent.click(screen.getByRole('button'))
-    expect(screen.getByText('Away Team @ Home Team')).toBeInTheDocument()
+    expect(screen.getByText('Away @ Home')).toBeInTheDocument()
     expect(screen.queryByText(/101/)).not.toBeInTheDocument()
     expect(screen.getByText('Final')).toBeInTheDocument()
   })

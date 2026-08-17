@@ -54,11 +54,11 @@ describe('crests in a game row', () => {
   })
 })
 
-describe('team names instead of abbreviations', () => {
-  const show = (props = {}) =>
+describe('naming the teams instead of abbreviating them', () => {
+  const show = (over = {}, props = {}) =>
     render(
       <FollowProvider>
-        <GameRow viewerId="nba" game={game({ state: 'post', score: [99, 101] })} tz="UTC" {...props} />
+        <GameRow viewerId="nba" game={game({ state: 'post', score: [99, 101], ...over })} tz="UTC" {...props} />
       </FollowProvider>
     )
 
@@ -67,18 +67,26 @@ describe('team names instead of abbreviations', () => {
     expect(screen.getByText('AWY 99 @ HME 101')).toBeInTheDocument()
   })
 
-  it('spells the clubs out when asked, for a full-width row', () => {
-    show({ names: true })
+  it('uses the NICKNAME, not the full name, so a phone row does not ellipsize', () => {
+    // "Portland Fire 88 @ Phoenix Mercury 85" was cut off mid-word at phone width; the
+    // row is one nowrap line. "Fire 88 @ Mercury 85" fits.
+    show({ awayShort: 'Fire', homeShort: 'Mercury', away: 'Portland Fire', home: 'Phoenix Mercury' }, { names: true })
+    expect(screen.getByText('Fire 99 @ Mercury 101')).toBeInTheDocument()
+    expect(screen.queryByText(/Portland Fire 99/)).not.toBeInTheDocument()
+  })
+
+  it('still carries the full name as the row’s title', () => {
+    show({ away: 'Portland Fire', home: 'Phoenix Mercury' }, { names: true })
+    expect(screen.getByTitle('Portland Fire at Phoenix Mercury')).toBeInTheDocument()
+  })
+
+  it('falls back to the full name when the feed sends no nickname', () => {
+    show({ awayShort: '', homeShort: '' }, { names: true })
     expect(screen.getByText('Away Team 99 @ Home Team 101')).toBeInTheDocument()
   })
 
-  it('falls back to whichever the feed actually has', () => {
-    render(
-      <FollowProvider>
-        <GameRow viewerId="nba" game={game({ away: '', home: '' })} tz="UTC" names />
-      </FollowProvider>
-    )
-    // No display name in the feed, so the abbreviation stands in even in names mode.
-    expect(screen.getByText('AWY @ HME')).toBeInTheDocument()
+  it('falls back to the abbreviation when the feed sends neither', () => {
+    show({ awayShort: '', homeShort: '', away: '', home: '' }, { names: true })
+    expect(screen.getByText('AWY 99 @ HME 101')).toBeInTheDocument()
   })
 })

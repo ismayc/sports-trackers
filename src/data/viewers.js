@@ -10,11 +10,11 @@
 // put a permanent "Offseason" tile in the grid and spend a network round-trip per page load
 // to learn nothing.
 //
-// As of 2026-07-29 every TOURNAMENT is archived and only the four ongoing leagues are live,
-// which is why the grid is styled as a fixed 4-across row (two on a tablet, one per row on a
-// phone) rather than the auto-fill it used when the count varied. Promoting a tournament back
-// into `VIEWERS` puts a fifth card in that row, which no longer divides evenly — see the
-// `.grid` rule in index.css before doing so.
+// From 2026-08-29 the FIBA Women's World Cup is live alongside the four ongoing leagues,
+// so `VIEWERS` holds FIVE. The grid was a fixed 4-across row while the count was exactly
+// four; it is now auto-fitting again, so a fifth card does not strand itself on a second
+// row. Move the World Cup to `ARCHIVED_VIEWERS` once its Final is played (the next edition
+// is 2030) and the count returns to four.
 //
 // Season shape is intentionally coarse — month windows, not exact schedules — because the
 // hub never commits a schedule snapshot the way the individual viewers do. The badge is a
@@ -83,6 +83,23 @@ export const VIEWERS = [
     kind: 'league',
     // Aug–May, wraps the new year. No playoff round — it's a table to the final whistle.
     season: { startMonth: 8, startDay: 15, endMonth: 5 },
+  },
+  {
+    id: 'fiba-wwc',
+    name: "FIBA Women's World Cup",
+    emoji: '🏀',
+    espnPath: 'basketball/fiba',
+    url: 'https://ismayc.github.io/fiba-womens-world-cup-viewer/',
+    calendarHost: 'fiba-womens-world-cup-viewer.netlify.app',
+    followKey: 'fwwc:followed',
+    kind: 'tournament',
+    tournamentLabel: 'World Cup',
+    // 4-13 September 2026, Berlin. LIVE rather than archived because it is being
+    // played right now; move it into ARCHIVED_VIEWERS once the Final is done, as
+    // the next edition is 2030.
+    window: { start: { m: 9, d: 4 }, end: { m: 9, d: 13 } },
+    edition: '2026',
+    nextEdition: '2030',
   },
 ]
 

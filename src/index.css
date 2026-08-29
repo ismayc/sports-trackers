@@ -141,9 +141,14 @@ h3 {
    (1080 - 3*14) / 4 = 259px.
    If a tournament is ever promoted back into VIEWERS, this becomes a 5-card row that no
    longer divides evenly — revisit the rule rather than letting it squeeze. */
+/* Auto-fitting rather than a fixed 4-across row. The fixed row was correct while
+   VIEWERS held exactly four; a fifth live viewer (the FIBA Women's World Cup, from
+   2026-08-29) stranded itself alone on a second row. `auto-fit` with a 260px floor
+   keeps whatever the count is evenly distributed, and still gives four across at
+   the widths the fixed rule was tuned for. */
 .grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 14px;
 }
 

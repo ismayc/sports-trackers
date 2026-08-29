@@ -53,6 +53,7 @@ describe('viewer registry', () => {
       euros: 'euros:followed',
       copa: 'copa:followed',
       worldcup: 'wc2026:followed',
+      'fiba-wwc': 'fwwc:followed',
     })
     const keys = ALL.map((v) => v.followKey)
     expect(new Set(keys).size).toBe(keys.length)
@@ -89,11 +90,21 @@ describe('live viewers', () => {
     }
   })
 
-  it('is exactly the four ongoing leagues — every tournament is archived', () => {
-    expect(VIEWERS.map((v) => v.id).sort()).toEqual(['epl', 'nba', 'nfl', 'wnba'])
-    // The grid is styled as a fixed 4-across row on the strength of this; see index.css.
-    expect(VIEWERS).toHaveLength(4)
-    for (const v of VIEWERS) expect(v.kind, v.id).toBe('league')
+  it('is the four ongoing leagues plus any tournament being played right now', () => {
+    expect(VIEWERS.map((v) => v.id).sort()).toEqual(['epl', 'fiba-wwc', 'nba', 'nfl', 'wnba'])
+    // The grid auto-fits rather than assuming a fixed count; see index.css. It stopped
+    // assuming exactly four when the FIBA Women's World Cup went live on 2026-08-29.
+    for (const v of VIEWERS) expect(['league', 'tournament'], v.id).toContain(v.kind)
+  })
+
+  // A live tournament is the exception, not the rule: it earns a grid tile only while it
+  // is actually on. Anything whose window has passed belongs in ARCHIVED_VIEWERS, or the
+  // hub spends a fetch per page load to render a permanent "Offseason" tile.
+  it('only carries a tournament whose window has not closed', () => {
+    for (const v of VIEWERS.filter((x) => x.kind === 'tournament')) {
+      expect(v.window, v.id).toBeTruthy()
+      expect(Number(v.edition), v.id).toBeGreaterThanOrEqual(2026)
+    }
   })
 })
 

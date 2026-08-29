@@ -13,7 +13,7 @@
 
 import { addDayKey, dayKey, todayKey } from '../utils/time.js'
 
-const BASE = 'https://site.api.espn.com/apis/site/v2/sports'
+const BASE = 'https://site.web.api.espn.com/apis/site/v2/sports'
 
 // National broadcast/stream names for a game. `broadcasts[].names` is the flat network
 // list; `geoBroadcasts[]` adds streamers and carries a market type — we keep National feeds

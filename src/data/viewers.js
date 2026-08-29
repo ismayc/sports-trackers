@@ -21,7 +21,7 @@
 // hint ("In season" / "Offseason" / "Starts in Nd"); the live feed is the source of truth
 // for whether anything is actually on today.
 //
-// `espnPath` slots into: site.api.espn.com/apis/site/v2/sports/{espnPath}/scoreboard
+// `espnPath` slots into: site.web.api.espn.com/apis/site/v2/sports/{espnPath}/scoreboard
 // `college: true` viewers get &groups=50&seasontype=3 appended AND the March-Madness
 //   headline filter applied (see services/espn.js) — the seasontype=3 window also carries
 //   NIT / Crown / WBIT games, which are NOT the tournament.

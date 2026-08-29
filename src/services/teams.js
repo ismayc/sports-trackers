@@ -1,6 +1,6 @@
 // The team catalog behind "My teams", read from ESPN's standings feed.
 //
-// NOT the obvious route. `site.api.espn.com/.../{league}/teams` is the natural place to ask
+// NOT the obvious route. `site.web.api.espn.com/.../{league}/teams` is the natural place to ask
 // for a league's clubs and it works from curl, but it answers a browser with NO
 // `access-control-allow-origin` header at all, so every request from the page fails as an
 // opaque "Failed to fetch". Verified 2026-08-17 against both site.api and site.web.api: the

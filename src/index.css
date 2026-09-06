@@ -8,6 +8,9 @@
   --card: #1b1e23;
   --card-hover: #23262d;
   --border: #2f333b;
+  /* One step stronger than --border: the rule that divides a scoreboard rail
+     from its game, and the band under a day heading. */
+  --rule: #3a3f49;
   --text: #f0f1f3;
   --text-dim: #a7adb8;
   --text-faint: #767d89;
@@ -27,19 +30,26 @@
   --logo-chip: rgba(255, 255, 255, 0.92);
 
   --radius: 2px;
-  --shadow: 0 6px 20px rgba(0, 0, 0, 0.32);
+  /* No shadow: structure comes from rules and the grid. The float shadow stays
+     for a surface that genuinely floats, like a modal. */
+  --shadow: none;
+  --shadow-float: 0 18px 40px rgba(0, 0, 0, 0.5);
   --page-bg: var(--bg);
 }
 
 :root[data-theme='light'] {
-  --bg: #f1f4f9;
-  --bg-soft: #e7ecf4;
+  /* The family's cool neutral pair, not a blue-tinted one: this page sits next
+     to ten viewers that all use it, and a bluer ground made the hub read as a
+     different product. */
+  --bg: #e7e8ea;
+  --bg-soft: #f4f5f6;
   --card: #ffffff;
-  --card-hover: #f6f8fc;
-  --border: #d8e0ec;
-  --text: #131922;
-  --text-dim: #5a6675;
-  --text-faint: #8b96a6;
+  --card-hover: #f4f5f6;
+  --border: #ccced3;
+  --rule: #b9bcc3;
+  --text: #101317;
+  --text-dim: #4a515c;
+  --text-faint: #767d89;
 
   --accent: #0d9488;
   --accent-ink: #ffffff;
@@ -52,7 +62,8 @@
 
   --logo-chip: transparent;
 
-  --shadow: 0 4px 16px rgba(20, 35, 60, 0.1);
+  --shadow: none;
+  --shadow-float: 0 18px 40px rgba(16, 19, 23, 0.18);
   --page-bg: var(--bg);
 }
 
@@ -80,6 +91,22 @@ h2,
 h3 {
   margin: 0;
   line-height: 1.2;
+}
+
+/* The display voice: the SAME family, pushed wide and heavy. One typeface used
+   at two extremes reads as two, without the mismatch of an actual second face.
+   Here it is spent on the headings that name a thing. The hub's figures live
+   inside sentences ("Fever 95 @ Dream 88") rather than in columns, so they take
+   tabular figures where they appear and not this. */
+.brand h1,
+.summary strong,
+h2,
+.card-title h3,
+.up-date,
+.up-cal-date {
+  font-stretch: 118%;
+  font-weight: 800;
+  letter-spacing: -0.015em;
 }
 
 .dim {
@@ -220,13 +247,13 @@ h3 {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
-  box-shadow: var(--shadow);
-  transition: background 0.15s, transform 0.15s, border-color 0.15s;
+  /* Flat. The card is defined by its border and the grid, not by floating: the
+     old drop shadow plus a 2px hover lift was decoration doing no work. */
+  transition: background 0.15s, border-color 0.15s;
 }
 .card:hover {
   background: var(--card-hover);
   border-color: var(--accent);
-  transform: translateY(-2px);
 }
 
 .card-head {
@@ -239,7 +266,6 @@ h3 {
   height: 40px;
   border-radius: 2px;
   flex: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 .card-title {
   display: flex;
@@ -310,22 +336,30 @@ h3 {
   font-size: 14px;
 }
 
+/* No gap: the rows meet on a shared rule, the way a results table does. */
 .rows {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
 }
 
 /* ── Game row ───────────────────────────────────────────────────────── */
+/* A row, not a little box. Games stack into one ruled block so a card with
+   five games reads as one board rather than as five identical capsules. */
 .row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: var(--bg-soft);
-  border: 1px solid var(--border);
-  border-radius: 2px;
-  padding: 6px 8px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 7px 0;
+}
+.rows .row:last-child,
+.up-item .row {
+  border-bottom: 0;
 }
 .row-teams {
   display: flex;
@@ -346,7 +380,7 @@ h3 {
 :root[data-theme='dark'] .team-logo,
 :root[data-theme='dark'] .tp-logo {
   background: var(--logo-chip);
-  border-radius: 3px;
+  border-radius: 2px;
   padding: 1px;
 }
 .row-line {
@@ -594,7 +628,7 @@ h3 {
   border-color: var(--accent);
 }
 .up-cal-game img {
-  border-radius: 3px;
+  border-radius: 2px;
 }
 .up-cal-line {
   font-variant-numeric: tabular-nums;
@@ -612,36 +646,46 @@ h3 {
 .up-day {
   margin-bottom: 16px;
 }
+/* A day is a block: a band naming it over a rule, then its games as ruled
+   rows. Set in the display voice rather than as a tracked-out all-caps label. */
 .up-date {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 6px;
+  font-size: 15px;
+  color: var(--text);
+  padding-bottom: 5px;
+  margin-bottom: 0;
+  border-bottom: 2px solid var(--rule);
 }
 .up-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
 }
+/* The rail here names the COMPETITION rather than the clock: on a page that
+   pools ten leagues into one list, which competition a game belongs to is the
+   column the eye needs, and the time already sits inside the row. */
 .up-item {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: stretch;
+  gap: 0;
   color: inherit;
   text-decoration: none;
-  border-radius: 2px;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
 }
-.up-item:hover .row {
-  border-color: var(--accent);
+.up-item:hover {
+  background: var(--card-hover);
 }
 .up-sport {
   flex: none;
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 148px;
+  /* 148px of TEXT plus the rail's 14px gutter: the width was tuned against the
+     longest competition name, so the gutter is added rather than taken out of
+     it, or "FIBA Women's World Cup" loses its last word. */
+  width: 162px;
+  padding: 7px 14px 7px 0;
+  border-right: 1px solid var(--rule);
   font-size: 12px;
   font-weight: 600;
   color: var(--text-dim);
@@ -650,21 +694,30 @@ h3 {
   text-overflow: ellipsis;
 }
 .up-sport img {
-  border-radius: 4px;
+  border-radius: 2px;
   flex: none;
 }
 .up-row {
   flex: 1;
   min-width: 0;
+  padding-left: 14px;
 }
 @media (max-width: 560px) {
   .up-item {
     flex-direction: column;
     align-items: stretch;
     gap: 3px;
+    padding: 6px 0;
   }
+  /* No column left to divide at this width: the rail loses its rule and
+     becomes a caption line above the game. */
   .up-sport {
     width: auto;
+    padding: 0;
+    border-right: 0;
+  }
+  .up-row {
+    padding-left: 0;
   }
 }
 
@@ -940,7 +993,7 @@ h3 {
   letter-spacing: 0.02em;
   color: var(--text-faint);
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 2px;
   padding: 1px 5px;
   white-space: nowrap;
   max-width: 90px;
@@ -953,7 +1006,7 @@ h3 {
   font-weight: 700;
   color: var(--text-faint);
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 2px;
   padding: 1px 5px;
   white-space: nowrap;
 }
@@ -972,7 +1025,7 @@ h3 {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-float);
   padding: 20px;
   width: 100%;
   max-width: 460px;
@@ -1052,7 +1105,7 @@ h3 {
 }
 
 .svc-icon {
-  border-radius: 5px;
+  border-radius: 2px;
   flex: none;
 }
 .svc-sport {
@@ -1089,7 +1142,7 @@ h3 {
   margin: 0 0 10px;
 }
 .svc-group legend .tp-legend-icon {
-  border-radius: 4px;
+  border-radius: 2px;
   vertical-align: -3px;
   margin-right: 5px;
 }

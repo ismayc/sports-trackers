@@ -3,14 +3,14 @@
    Matches the family's approach: one global stylesheet, CSS custom properties. */
 :root,
 :root[data-theme='dark'] {
-  --bg: #12151c;
-  --bg-soft: #171b24;
-  --card: #1a2029;
-  --card-hover: #212936;
-  --border: #2a3341;
-  --text: #e9edf3;
-  --text-dim: #98a3b3;
-  --text-faint: #69748a;
+  --bg: #15171b;
+  --bg-soft: #1b1e23;
+  --card: #1b1e23;
+  --card-hover: #23262d;
+  --border: #2f333b;
+  --text: #f0f1f3;
+  --text-dim: #a7adb8;
+  --text-faint: #767d89;
 
   /* A cross-sport accent — not any one league's colour. */
   --accent: #4fd1c5;
@@ -26,9 +26,9 @@
      so without this the darker ones vanish. Nothing behind them in light mode. */
   --logo-chip: rgba(255, 255, 255, 0.92);
 
-  --radius: 14px;
+  --radius: 2px;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.32);
-  --page-bg: radial-gradient(1100px 560px at 85% -12%, #13322e 0%, var(--bg) 58%);
+  --page-bg: var(--bg);
 }
 
 :root[data-theme='light'] {
@@ -53,7 +53,7 @@
   --logo-chip: transparent;
 
   --shadow: 0 4px 16px rgba(20, 35, 60, 0.1);
-  --page-bg: radial-gradient(1100px 560px at 85% -12%, #dcefec 0%, var(--bg) 58%);
+  --page-bg: var(--bg);
 }
 
 * {
@@ -66,7 +66,8 @@ body {
   background-image: var(--page-bg);
   background-attachment: fixed;
   color: var(--text);
-  font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font: 15px/1.5 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -117,7 +118,7 @@ h3 {
   background: var(--card);
   border: 1px solid var(--border);
   color: var(--text);
-  border-radius: 10px;
+  border-radius: 2px;
   width: 40px;
   height: 40px;
   font-size: 18px;
@@ -236,7 +237,7 @@ h3 {
 .card-icon {
   width: 40px;
   height: 40px;
-  border-radius: 9px;
+  border-radius: 2px;
   flex: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
@@ -258,7 +259,7 @@ h3 {
   font-weight: 600;
   letter-spacing: 0.02em;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: 2px;
   border: 1px solid currentColor;
 }
 .badge-hot {
@@ -323,7 +324,7 @@ h3 {
   gap: 8px;
   background: var(--bg-soft);
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: 2px;
   padding: 6px 8px;
 }
 .row-teams {
@@ -416,7 +417,7 @@ h3 {
   font-size: 11px;
   font-weight: 600;
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: 2px;
   background: var(--accent-soft);
   color: var(--text-dim);
   white-space: nowrap;
@@ -507,7 +508,7 @@ h3 {
   gap: 4px;
   background: var(--bg-soft);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 2px;
   padding: 3px;
 }
 .up-tab {
@@ -517,7 +518,7 @@ h3 {
   font-size: 12.5px;
   font-weight: 600;
   padding: 4px 12px;
-  border-radius: 999px;
+  border-radius: 2px;
   cursor: pointer;
 }
 .up-tab.on {
@@ -534,7 +535,7 @@ h3 {
   display: grid;
   grid-template-columns: repeat(7, minmax(96px, 1fr));
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 2px;
   overflow: hidden;
   min-width: 700px;
   background: var(--border);
@@ -585,7 +586,7 @@ h3 {
   text-decoration: none;
   background: var(--bg-soft);
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: 2px;
   padding: 3px 6px;
   min-width: 0;
 }
@@ -630,7 +631,7 @@ h3 {
   gap: 10px;
   color: inherit;
   text-decoration: none;
-  border-radius: 9px;
+  border-radius: 2px;
 }
 .up-item:hover .row {
   border-color: var(--accent);
@@ -717,13 +718,13 @@ h3 {
   gap: 10px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 2px;
   padding: 8px 12px;
 }
 .shelf-icon {
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: 2px;
   flex: none;
 }
 .shelf-name {
@@ -766,7 +767,7 @@ h3 {
   margin-top: 30px;
   background: var(--bg-soft);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 2px;
   padding: 4px 14px;
 }
 .archived-summary {
@@ -826,7 +827,7 @@ h3 {
   gap: 10px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 2px;
   padding: 8px 12px;
 }
 .archived-link {
@@ -844,7 +845,7 @@ h3 {
 .archived-icon {
   width: 28px;
   height: 28px;
-  border-radius: 7px;
+  border-radius: 2px;
   flex: none;
 }
 /* Wraps rather than ellipsizing. "Men's March Madness 2026" does not fit one line beside
@@ -882,7 +883,7 @@ h3 {
 }
 .chip {
   padding: 7px 13px;
-  border-radius: 999px;
+  border-radius: 2px;
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--text-dim);
@@ -1011,7 +1012,7 @@ h3 {
   gap: 7px;
   padding: 7px 10px;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: 2px;
   font-size: 13px;
   cursor: pointer;
   background: var(--bg-soft);
@@ -1033,7 +1034,7 @@ h3 {
 }
 .btn-primary {
   padding: 8px 18px;
-  border-radius: 9px;
+  border-radius: 2px;
   border: 1px solid var(--accent);
   background: var(--accent);
   color: var(--accent-ink);
@@ -1069,7 +1070,7 @@ h3 {
   box-sizing: border-box;
   margin: 0 0 14px;
   padding: 8px 12px;
-  border-radius: 9px;
+  border-radius: 2px;
   border: 1px solid var(--border);
   background: var(--bg-soft);
   color: var(--text);

@@ -117,6 +117,12 @@ function normalize(ev, v) {
     homeLogo: teamLogo(home.team),
     awayLogo: teamLogo(away.team),
     state: st.state || 'pre', // 'pre' | 'in' | 'post'
+    // Is this a postseason game? ESPN's season.type: 3 is the postseason, 5 the NBA
+    // play-in (which sits outside 3 in ESPN's numbering — see isPreseason). Both make
+    // the hub's badge read "Playoffs". This is the only reliable regular-vs-postseason
+    // signal: the calendar can't tell them apart where they share a month (the WNBA
+    // regular season runs into late September, its playoffs start after).
+    postseason: [3, 5].includes(ev.season?.type),
     score: hasScore ? [as, hs] : null, // [away, home] so it reads left-to-right as AWAY @ HOME
     statusLabel: st.shortDetail || st.detail || null, // "Q3 4:21", "Final", "7:00 PM"
     broadcast: broadcastNames(c), // national networks/streamers, for the watch filter
@@ -212,8 +218,13 @@ export async function fetchViewerDay(v, { signal, now = new Date(), tz } = {}) {
   // Every not-yet-started game in the window, soonest first. `next` is the first of these;
   // the watch filter re-derives its own next from this list after dropping unwatchable games.
   const upcoming = all.filter((g) => g.state === 'pre' && new Date(g.tip).getTime() > now.getTime())
+  // "Playoffs" is a fact about the games actually on today, not a calendar guess: a
+  // postseason game today (a live one is still in `today`) is the definitive signal.
+  // Deliberately today-only — a look-ahead would light up "Playoffs" while the regular
+  // season is still running, the very bug this replaces.
+  const postseason = today.some((g) => g.postseason)
 
-  return { id: v.id, ok: anyOk, today, live, yesterday, upcoming, next: upcoming[0] || null }
+  return { id: v.id, ok: anyOk, today, live, yesterday, upcoming, next: upcoming[0] || null, postseason }
 }
 
 // Load every viewer at once. One slow/failed feed never blocks the rest.
@@ -222,6 +233,6 @@ export async function fetchAllViewers(viewers, opts = {}) {
   return settled.map((r, i) =>
     r.status === 'fulfilled'
       ? r.value
-      : { id: viewers[i].id, ok: false, today: [], live: 0, yesterday: [], upcoming: [], next: null }
+      : { id: viewers[i].id, ok: false, today: [], live: 0, yesterday: [], upcoming: [], next: null, postseason: false }
   )
 }

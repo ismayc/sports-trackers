@@ -5,7 +5,6 @@ import { VIEWERS } from '../src/data/viewers.js'
 const league = (over = {}) => ({
   kind: 'league',
   season: { startMonth: 10, startDay: 21, endMonth: 6 },
-  playoffs: { startMonth: 4, endMonth: 6 },
   ...over,
 })
 const tournament = (over = {}) => ({
@@ -52,23 +51,33 @@ describe('seasonPhase — tournaments', () => {
 })
 
 describe('seasonPhase — leagues', () => {
-  it('reports playoffs inside the playoff months', () => {
-    expect(seasonPhase(league(), { now: on(2026, 5, 10) })).toEqual({ label: 'Playoffs', tone: 'hot' })
+  it('reports playoffs when a postseason game is on the feed', () => {
+    expect(seasonPhase(league(), { now: on(2026, 5, 10), postseason: true })).toEqual({
+      label: 'Playoffs',
+      tone: 'hot',
+    })
   })
 
-  it('reports in-season inside the season but outside the playoffs', () => {
+  it('stays in-season inside the season when no postseason game is on the feed', () => {
+    // Same May date, but the feed shows no postseason game: the calendar alone must not
+    // call it "Playoffs".
+    expect(seasonPhase(league(), { now: on(2026, 5, 10) })).toEqual({ label: 'In season', tone: 'on' })
     expect(seasonPhase(league(), { now: on(2026, 12, 1) })).toEqual({ label: 'In season', tone: 'on' })
   })
 
-  it('handles a season that does NOT wrap the new year', () => {
-    const wnba = league({ season: { startMonth: 5, startDay: 1, endMonth: 10 }, playoffs: { startMonth: 9, endMonth: 10 } })
+  it('does not call the WNBA regular-season tail "Playoffs"', () => {
+    // The bug: on Sep 13 the WNBA regular season is still running (it ends Sep 25), yet a
+    // Sep-Oct playoff month-window labeled it "Playoffs". With no postseason game on the
+    // feed it must read "In season"; a real postseason game upgrades it.
+    const wnba = league({ season: { startMonth: 5, startDay: 1, endMonth: 10 } })
     expect(seasonPhase(wnba, { now: on(2026, 7, 1) }).label).toBe('In season')
-    expect(seasonPhase(wnba, { now: on(2026, 9, 20) }).label).toBe('Playoffs')
+    expect(seasonPhase(wnba, { now: on(2026, 9, 13) }).label).toBe('In season')
+    expect(seasonPhase(wnba, { now: on(2026, 9, 13), postseason: true }).label).toBe('Playoffs')
     expect(seasonPhase(wnba, { now: on(2026, 2, 1) }).tone).not.toBe('on')
   })
 
-  it('treats a league with no playoff block as simply in season', () => {
-    const epl = league({ season: { startMonth: 8, startDay: 15, endMonth: 5 }, playoffs: undefined })
+  it('treats a league with no postseason game as simply in season', () => {
+    const epl = league({ season: { startMonth: 8, startDay: 15, endMonth: 5 } })
     expect(seasonPhase(epl, { now: on(2026, 4, 1) })).toEqual({ label: 'In season', tone: 'on' })
   })
 

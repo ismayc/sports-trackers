@@ -207,7 +207,11 @@ export default function App() {
   const cards = useMemo(() => {
     return visibleViewers.map((v) => {
       const feed = feedById[v.id] || EMPTY_FEED(v.id)
-      const phase = seasonPhase(v, { now, hasGames: feed.today.length > 0 || feed.live > 0 })
+      const phase = seasonPhase(v, {
+        now,
+        hasGames: feed.today.length > 0 || feed.live > 0,
+        postseason: feed.postseason,
+      })
       return { v, feed, phase, rank: rankOf(feed, phase) }
     }).sort(
       (a, b) =>

@@ -51,6 +51,7 @@ describe('espn.js fallbacks', () => {
       yesterday: [],
       upcoming: [],
       next: null,
+      postseason: false,
     })
   })
 })

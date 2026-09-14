@@ -69,6 +69,30 @@ describe('preseason is dropped from the feed', () => {
   })
 })
 
+describe('postseason flag', () => {
+  it('marks a postseason game today and raises the feed flag', async () => {
+    stubFetch([espnEvent({ id: 'po', date: '2026-07-29T23:00Z', seasonType: 3 })])
+    const f = await run()
+    expect(f.today[0].postseason).toBe(true)
+    expect(f.postseason).toBe(true)
+  })
+
+  it('counts the NBA play-in (type 5) as postseason', async () => {
+    stubFetch([espnEvent({ id: 'pi', date: '2026-07-29T23:00Z', seasonType: 5 })])
+    const f = await run()
+    expect(f.today[0].postseason).toBe(true)
+    expect(f.postseason).toBe(true)
+  })
+
+  it('leaves the flag off for a regular-season game', async () => {
+    stubFetch([espnEvent({ id: 'reg', date: '2026-07-29T23:00Z', seasonType: 2 })])
+    const f = await run()
+    expect(f.today[0].postseason).toBe(false)
+    expect(f.postseason).toBe(false)
+  })
+
+})
+
 describe('normalize', () => {
   it('maps a pre-game event into the hub shape', async () => {
     stubFetch([espnEvent({ id: 'x', date: '2026-07-29T23:00Z', broadcasts: [{ names: ['ESPN'] }] })])
@@ -479,7 +503,7 @@ describe('fetchAllViewers', () => {
     })
     const feeds = await fetchAllViewers(VS, { now: NOW, tz: TZ })
     expect(feeds[0]).toMatchObject({ id: 'nba', ok: true })
-    expect(feeds[1]).toMatchObject({ id: 'nfl', ok: false, today: [], live: 0, next: null })
+    expect(feeds[1]).toMatchObject({ id: 'nfl', ok: false, today: [], live: 0, next: null, postseason: false })
   })
 
   it('defaults its options, so a bare call still resolves', async () => {

@@ -42,9 +42,10 @@ export const VIEWERS = [
     calendarHost: 'the-nba-schedule.netlify.app',
     followKey: 'nba:followed',
     kind: 'league',
-    // Regular season Oct–Apr; playoffs Apr–Jun. Wraps the new year (start>end month).
+    // Regular season Oct–Apr; playoffs run to June. Wraps the new year (start>end month).
+    // The playoff window is not configured: "Playoffs" comes from the feed's season type
+    // (see utils/phase), because the postseason shares months with the regular season.
     season: { startMonth: 10, startDay: 21, endMonth: 6 },
-    playoffs: { startMonth: 4, endMonth: 6 },
   },
   {
     id: 'nfl',
@@ -55,9 +56,9 @@ export const VIEWERS = [
     calendarHost: 'the-nfl-schedule.netlify.app',
     followKey: 'nfl:followed',
     kind: 'league',
-    // Sep through the Feb Super Bowl; playoffs Jan–Feb.
+    // Sep through the Feb Super Bowl. "Playoffs" comes from the feed's season type, not
+    // the calendar: January is both the regular-season tail and the playoffs.
     season: { startMonth: 9, startDay: 4, endMonth: 2 },
-    playoffs: { startMonth: 1, endMonth: 2 },
   },
   {
     id: 'wnba',
@@ -68,9 +69,10 @@ export const VIEWERS = [
     calendarHost: 'the-wnba-schedule.netlify.app',
     followKey: 'wnba:followed',
     kind: 'league',
-    // May–Oct, within one calendar year; playoffs Sep–Oct.
+    // May–Oct, within one calendar year. "Playoffs" comes from the feed's season type,
+    // not the calendar: the regular season runs into late September, the playoffs start
+    // after, so both live in September.
     season: { startMonth: 5, startDay: 1, endMonth: 10 },
-    playoffs: { startMonth: 9, endMonth: 10 },
   },
   {
     id: 'epl',

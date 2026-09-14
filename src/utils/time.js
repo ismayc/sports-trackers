@@ -91,4 +91,13 @@ export function daysUntilMonthDay(now, month, day) {
   return Math.round((startOfDay(target) - startOfDay(now)) / 86_400_000)
 }
 
+// Days-until for a concrete 'YYYY-MM-DD' date, parsed in the LOCAL zone. Negative once the
+// date has passed. Used for a tournament's "Starts in Nd" countdown, where the exact edition
+// date is known (unlike the recurring month/day above).
+export function daysUntilDate(now, iso) {
+  const [y, m, d] = iso.split('-').map(Number)
+  const target = new Date(y, m - 1, d)
+  return Math.round((startOfDay(target) - startOfDay(now)) / 86_400_000)
+}
+
 const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate())

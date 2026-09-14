@@ -1,4 +1,4 @@
-import { ARCHIVED_VIEWERS } from '../data/viewers.js'
+import { archivedViewers } from '../data/viewers.js'
 
 // Finished editions, collapsed by default.
 //
@@ -11,7 +11,7 @@ import { ARCHIVED_VIEWERS } from '../data/viewers.js'
 // No feeds, no phase badges, no game rows. These tournaments are over, so the only useful
 // things are a way in and the year the competition returns. Result/champion is deliberately
 // absent — see the note in data/viewers.js about spoiler-free mode.
-export default function ArchivedShelf({ viewers = ARCHIVED_VIEWERS }) {
+export default function ArchivedShelf({ viewers = archivedViewers() }) {
   if (!viewers.length) return null
 
   return (

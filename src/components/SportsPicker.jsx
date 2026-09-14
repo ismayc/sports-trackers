@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
-import { VIEWERS } from '../data/viewers.js'
+import { liveViewers } from '../data/viewers.js'
 
 // Choose which viewers appear on the hub. `selected` is an array of viewer ids, or null
 // meaning "all" (the default, and what we store back whenever every sport is checked — so a
 // viewer added later still shows up for everyone who hasn't narrowed the list).
-export default function SportsPicker({ selected, onChange, onClose }) {
-  const allIds = VIEWERS.map((v) => v.id)
+export default function SportsPicker({ viewers = liveViewers(), selected, onChange, onClose }) {
+  const allIds = viewers.map((v) => v.id)
   const shown = new Set(selected && selected.length ? selected : allIds)
 
   const toggle = (id) => {
@@ -34,7 +34,7 @@ export default function SportsPicker({ selected, onChange, onClose }) {
         <h2>Which sports to show</h2>
         <p className="dim modal-note">Pick the viewers you want on this page.</p>
         <div className="svc-grid">
-          {VIEWERS.map((v) => (
+          {viewers.map((v) => (
             <label key={v.id} className={`svc svc-sport ${shown.has(v.id) ? 'on' : ''}`}>
               <input
                 type="checkbox"

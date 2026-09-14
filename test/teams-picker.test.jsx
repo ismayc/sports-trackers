@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import TeamsPicker from '../src/components/TeamsPicker.jsx'
 import { FollowProvider } from '../src/context/follow.jsx'
-import { VIEWERS } from '../src/data/viewers.js'
+import { liveViewers } from '../src/data/viewers.js'
+
+// Pinned mid-tournament so the live set is fixed (five viewers) whenever the suite runs.
+const NOW = new Date('2026-09-10T12:00:00')
+const LIVE = liveViewers(NOW)
 
 // The catalog service is mocked here and exercised directly in teams.test.js, so these tests
 // are about what the DIALOG does with a catalog.
@@ -30,7 +34,7 @@ const settle = () => act(async () => {})
 const show = async (onClose = vi.fn()) => {
   const r = render(
     <FollowProvider>
-      <TeamsPicker onClose={onClose} />
+      <TeamsPicker viewers={LIVE} onClose={onClose} />
     </FollowProvider>
   )
   await settle()
@@ -42,7 +46,7 @@ describe('TeamsPicker', () => {
     fetchTeams.mockReturnValue(new Promise((res) => (resolveCatalog = res)))
     render(
       <FollowProvider>
-        <TeamsPicker onClose={vi.fn()} />
+        <TeamsPicker viewers={LIVE} onClose={vi.fn()} />
       </FollowProvider>
     )
     expect(screen.getByText('Loading teams…')).toBeInTheDocument()
@@ -52,7 +56,7 @@ describe('TeamsPicker', () => {
 
   it('groups the teams under one heading per sport', async () => {
     await show()
-    for (const v of VIEWERS) expect(screen.getByText(new RegExp(`^${v.name}`))).toBeInTheDocument()
+    for (const v of LIVE) expect(screen.getByText(new RegExp(`^${v.name}`))).toBeInTheDocument()
     expect(screen.getByLabelText('Boston Celtics')).toBeInTheDocument()
     expect(screen.getByLabelText('Arsenal')).toBeInTheDocument()
   })

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { VIEWERS, ARCHIVED_VIEWERS } from './data/viewers.js'
+import { liveViewers, archivedViewers } from './data/viewers.js'
 import { fetchAllViewers } from './services/espn.js'
 import { seasonPhase } from './utils/phase.js'
 import { detectTimezone, isValidZone, timezoneOptions } from './utils/time.js'
@@ -15,7 +15,7 @@ import UpcomingSchedule from './components/UpcomingSchedule.jsx'
 import YesterdayRecap from './components/YesterdayRecap.jsx'
 import ArchivedShelf from './components/ArchivedShelf.jsx'
 
-const EMPTY_FEED = (id) => ({ id, ok: false, today: [], live: 0, yesterday: [], upcoming: [], next: null })
+const EMPTY_FEED = (id) => ({ id, ok: false, today: [], live: 0, yesterday: [], upcoming: [], next: null, postseason: false })
 
 const loadJson = (key, fallback) => {
   try {
@@ -92,9 +92,15 @@ export default function App() {
     }
   }, [tz])
   const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'dark')
-  const [feeds, setFeeds] = useState(() => VIEWERS.map((v) => EMPTY_FEED(v.id)))
+  const [feeds, setFeeds] = useState(() => liveViewers().map((v) => EMPTY_FEED(v.id)))
   const [status, setStatus] = useState('loading') // 'loading' | 'ready' | 'error'
   const [now, setNow] = useState(() => new Date())
+
+  // The live-vs-archived split is derived from the clock (see data/viewers): a tournament
+  // drops out of `live` and into `archived` on its own once its edition has ended, so
+  // nothing here is fetched or gridded for a finished tournament.
+  const live = useMemo(() => liveViewers(now), [now])
+  const archived = useMemo(() => archivedViewers(now), [now])
 
   // The hub is a glanceable dashboard, so the feeds stay current instead of freezing at
   // page load: advance `now` every minute while anything is live, every five otherwise.
@@ -169,7 +175,7 @@ export default function App() {
   // One client-side load of all seven feeds. No backend, no key.
   useEffect(() => {
     const ctrl = new AbortController()
-    fetchAllViewers(VIEWERS, { signal: ctrl.signal, now, tz })
+    fetchAllViewers(live, { signal: ctrl.signal, now, tz })
       .then((res) => {
         setFeeds(res)
         setStatus('ready')
@@ -194,10 +200,10 @@ export default function App() {
     [displayFeeds]
   )
 
-  // The viewers the user has chosen to show (null = all).
+  // The viewers the user has chosen to show (null = all), out of the currently-live set.
   const visibleViewers = useMemo(
-    () => (sports && sports.length ? VIEWERS.filter((v) => sports.includes(v.id)) : VIEWERS),
-    [sports]
+    () => (sports && sports.length ? live.filter((v) => sports.includes(v.id)) : live),
+    [sports, live]
   )
   const visibleFeeds = useMemo(() => {
     const ids = new Set(visibleViewers.map((v) => v.id))
@@ -356,7 +362,7 @@ export default function App() {
       {/* Deliberately ABOVE the two-week breakdown, not at the foot of the page: the
           breakdown is a long scroll, and anything after it is effectively hidden. Order is
           asserted in app.test.jsx so it cannot drift back. */}
-      <ArchivedShelf />
+      <ArchivedShelf viewers={archived} />
 
       <UpcomingSchedule
         feeds={visibleFeeds}
@@ -369,12 +375,13 @@ export default function App() {
 
       {showSports && (
         <SportsPicker
+          viewers={live}
           selected={sports}
           onChange={setSports}
           onClose={() => setShowSports(false)}
         />
       )}
-      {showTeams && <TeamsPicker onClose={() => setShowTeams(false)} />}
+      {showTeams && <TeamsPicker viewers={live} onClose={() => setShowTeams(false)} />}
       {showPicker && (
         <ServicesPicker
           selected={services}

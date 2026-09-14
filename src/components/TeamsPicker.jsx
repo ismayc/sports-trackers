@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { VIEWERS } from '../data/viewers.js'
+import { liveViewers } from '../data/viewers.js'
 import { useFollow } from '../context/follow.jsx'
 import { fetchTeams } from '../services/teams.js'
 
@@ -10,7 +10,7 @@ import { fetchTeams } from '../services/teams.js'
 // The catalog is fetched when this opens rather than at page load (services/teams.js), so a
 // visitor who never opens the picker pays nothing for it. Four leagues is about 97 teams, so
 // there is a search box; it matches on name and abbreviation across every sport at once.
-export default function TeamsPicker({ onClose }) {
+export default function TeamsPicker({ viewers = liveViewers(), onClose }) {
   const follow = useFollow()
   const [catalog, setCatalog] = useState(null) // null while loading
   const [q, setQ] = useState('')
@@ -19,8 +19,10 @@ export default function TeamsPicker({ onClose }) {
     const ctrl = new AbortController()
     // fetchTeams never rejects: a league that fails comes back as an empty list, which is
     // reported per-section below rather than blanking the whole dialog.
-    fetchTeams(VIEWERS, { signal: ctrl.signal }).then(setCatalog)
+    fetchTeams(viewers, { signal: ctrl.signal }).then(setCatalog)
     return () => ctrl.abort()
+    // Fetch once when the picker opens; the viewer set does not change while it is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export default function TeamsPicker({ onClose }) {
   const needle = q.trim().toLowerCase()
   const groups = useMemo(
     () =>
-      VIEWERS.map((v) => {
+      viewers.map((v) => {
         const teams = catalog?.[v.id] || []
         return {
           v,
@@ -45,7 +47,7 @@ export default function TeamsPicker({ onClose }) {
     [catalog, needle]
   )
 
-  const picked = VIEWERS.reduce((n, v) => n + follow.countFor(v.id), 0)
+  const picked = viewers.reduce((n, v) => n + follow.countFor(v.id), 0)
   const noMatches = catalog !== null && needle !== '' && groups.every((g) => g.shown.length === 0)
 
   return (
@@ -130,7 +132,7 @@ export default function TeamsPicker({ onClose }) {
 
         <div className="modal-actions">
           {picked > 0 && (
-            <button className="btn-link" onClick={() => follow.clearFor(VIEWERS.map((v) => v.id))}>
+            <button className="btn-link" onClick={() => follow.clearFor(viewers.map((v) => v.id))}>
               Clear all
             </button>
           )}

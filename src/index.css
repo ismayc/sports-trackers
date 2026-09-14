@@ -167,19 +167,11 @@ h2,
 }
 
 /* ── Card grid ──────────────────────────────────────────────────────── */
-/* Four across on desktop, two on a tablet, one per row on a phone.
-   A FIXED four columns, not the auto-fill/minmax(300px) this used to be: every live viewer
-   is now an ongoing league (WNBA, Premier League, NFL, NBA — see data/viewers.js, where all
-   six tournaments moved to the archived shelf), so the count is fixed at four and auto-fill
-   would keep reflowing it by available width. Within the 1080px app that puts each card at
-   (1080 - 3*14) / 4 = 259px.
-   If a tournament is ever promoted back into VIEWERS, this becomes a 5-card row that no
-   longer divides evenly — revisit the rule rather than letting it squeeze. */
-/* Auto-fitting rather than a fixed 4-across row. The fixed row was correct while
-   VIEWERS held exactly four; a fifth live viewer (the FIBA Women's World Cup, from
-   2026-08-29) stranded itself alone on a second row. `auto-fit` with a 260px floor
-   keeps whatever the count is evenly distributed, and still gives four across at
-   the widths the fixed rule was tuned for. */
+/* Auto-fitting, not a fixed 4-across row, because the live count is not fixed: a
+   tournament joins the live set for its edition and auto-archives when it ends (see
+   data/viewers.js), so the grid holds four on most days and more while a tournament is on.
+   `auto-fit` with a 260px floor distributes whatever the count is evenly, and still gives
+   four across at the widths a fixed 4-column rule was tuned for. */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act, within } from '@testing-library/react'
 import App from '../src/App.jsx'
 import { FollowProvider } from '../src/context/follow.jsx'
-import { VIEWERS, ARCHIVED_VIEWERS } from '../src/data/viewers.js'
+import { liveViewers, archivedViewers } from '../src/data/viewers.js'
 import { game, feed } from './helpers/feed.js'
 
 // App owns the fetch loop, so the service is mocked here and exercised directly in
@@ -15,9 +15,9 @@ vi.mock('../src/services/espn.js', () => ({
 }))
 
 const EMPTY = (id) => feed({ id, today: [], upcoming: [], yesterday: [], next: null })
-const allEmpty = () => VIEWERS.map((v) => EMPTY(v.id))
+const allEmpty = () => liveViewers(NOW).map((v) => EMPTY(v.id))
 
-const feedsFor = (over = {}) => VIEWERS.map((v) => ({ ...EMPTY(v.id), ...(over[v.id] || {}) }))
+const feedsFor = (over = {}) => liveViewers(NOW).map((v) => ({ ...EMPTY(v.id), ...(over[v.id] || {}) }))
 
 const NOW = new Date('2026-07-29T18:00:00Z')
 
@@ -70,23 +70,23 @@ describe('App shell', () => {
   it('renders one card per live viewer and none for the archived ones', async () => {
     show()
     await settle()
-    for (const v of VIEWERS) expect(screen.getByRole('heading', { name: v.name })).toBeInTheDocument()
-    for (const v of ARCHIVED_VIEWERS) {
+    for (const v of liveViewers(NOW)) expect(screen.getByRole('heading', { name: v.name })).toBeInTheDocument()
+    for (const v of archivedViewers(NOW)) {
       expect(screen.queryByRole('heading', { name: v.name })).not.toBeInTheDocument()
     }
   })
 
-  // THE invariant that makes a viewer "archived". Archived entries deliberately keep their
-  // espnPath and window so reviving them is a straight move between arrays, which means the
-  // data alone can no longer tell you they are not fetched — only this can. Six wasted
-  // round-trips per page load is exactly what the shelf exists to avoid.
+  // THE invariant that makes a viewer "archived": the hub never fetches it. Archived entries
+  // keep their espnPath and runs so reviving them just needs new dates, so the data alone can
+  // no longer tell you they are not fetched, only this can. Six wasted round-trips per page
+  // load is exactly what the shelf exists to avoid.
   it('fetches the live viewers ONLY — never an archived one', async () => {
     show()
     await settle()
     expect(fetchAllViewers).toHaveBeenCalledTimes(1)
     const requested = fetchAllViewers.mock.calls[0][0]
-    expect(requested.map((v) => v.id)).toEqual(VIEWERS.map((v) => v.id))
-    const archived = new Set(ARCHIVED_VIEWERS.map((v) => v.id))
+    expect(requested.map((v) => v.id)).toEqual(liveViewers(NOW).map((v) => v.id))
+    const archived = new Set(archivedViewers(NOW).map((v) => v.id))
     for (const v of requested) expect(archived.has(v.id), `${v.id} was fetched`).toBe(false)
   })
 })
@@ -151,7 +151,7 @@ describe('the archived tournaments shelf', () => {
       details.open = true
     })
     const hrefs = [...details.querySelectorAll('a')].map((a) => a.getAttribute('href'))
-    expect(hrefs).toEqual(ARCHIVED_VIEWERS.map((v) => v.url))
+    expect(hrefs).toEqual(archivedViewers(NOW).map((v) => v.url))
   })
 })
 
@@ -237,7 +237,7 @@ describe('sports picker wiring', () => {
 
     expect(screen.queryByRole('heading', { name: 'NBA' })).not.toBeInTheDocument()
     // Regex, not an exact string: the chip's emoji makes this two text nodes.
-    expect(screen.getByText(new RegExp(`Sports \\(${VIEWERS.length - 1}\\)`))).toBeInTheDocument()
+    expect(screen.getByText(new RegExp(`Sports \\(${liveViewers(NOW).length - 1}\\)`))).toBeInTheDocument()
   })
 })
 
@@ -435,7 +435,7 @@ describe('my teams filter', () => {
     )
     // Every card, not just the NBA one: none of the four has a game for a followed team.
     expect(screen.getAllByText('Nothing for your teams in the next two weeks')).toHaveLength(
-      VIEWERS.length
+      liveViewers(NOW).length
     )
   })
 
@@ -600,12 +600,12 @@ describe('App defensive fallbacks', () => {
     fetchAllViewers.mockResolvedValue([{ ...EMPTY('nba'), today: [game()] }])
     show()
     await settle()
-    for (const v of VIEWERS) expect(screen.getByRole('heading', { name: v.name })).toBeInTheDocument()
+    for (const v of liveViewers(NOW)) expect(screen.getByRole('heading', { name: v.name })).toBeInTheDocument()
     expect(screen.getByText('1 game today')).toBeInTheDocument()
   })
 
   it('filters a feed that has no upcoming key at all', async () => {
-    const feeds = VIEWERS.map((v) => {
+    const feeds = liveViewers(NOW).map((v) => {
       const f = { ...EMPTY(v.id), today: [game({ broadcast: ['ESPN'] })] }
       delete f.upcoming
       return f

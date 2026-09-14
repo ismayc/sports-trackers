@@ -2,37 +2,44 @@
 // how to reach its ESPN feed, where its deployed app is, its calendar (webcal) host, and
 // enough season-shape info to render a phase badge on a day with zero games.
 //
-// TWO LISTS, on purpose. `VIEWERS` is the LIVE set: the four leagues whose feeds are
-// fetched, which fill the main grid, the sports picker, the install shelf and every "games
-// today" count. `ARCHIVED_VIEWERS` (bottom of this file) holds finished editions whose apps
-// still work but whose next tournament is a cycle away — they render in a collapsed section,
-// hidden by default, and are deliberately NOT fetched. Adding one to `VIEWERS` instead would
-// put a permanent "Offseason" tile in the grid and spend a network round-trip per page load
-// to learn nothing.
+// ONE master list, `ALL_VIEWERS`. The live-vs-archived split is DERIVED from the clock, not
+// hand-maintained: `liveViewers(now)` is the set the hub fetches and fills the main grid,
+// the sports picker and the install shelf with; `archivedViewers(now)` is the finished
+// editions that render in the collapsed "Completed tournaments" shelf and are never fetched.
 //
-// From 2026-08-29 the FIBA Women's World Cup is live alongside the four ongoing leagues,
-// so `VIEWERS` holds FIVE. The grid was a fixed 4-across row while the count was exactly
-// four; it is now auto-fitting again, so a fifth card does not strand itself on a second
-// row. Move the World Cup to `ARCHIVED_VIEWERS` once its Final is played (the next edition
-// is 2030) and the count returns to four.
+// A tournament AUTO-ARCHIVES once `now` is past its edition's `runs.end` (see isArchived).
+// Nothing has to be moved by hand when a Final is played. Reviving one for its next edition
+// is the one manual step left: update its `runs` (and `edition` / `nextEdition`) to the new
+// dates, which is work you do anyway to load the new schedule into the viewer app. Until
+// then a finished tournament simply stays in the Completed shelf. Leagues never archive:
+// they roll from season to season in place, so they are always live.
 //
-// Season shape is intentionally coarse — month windows, not exact schedules — because the
-// hub never commits a schedule snapshot the way the individual viewers do. The badge is a
-// hint ("In season" / "Offseason" / "Starts in Nd"); the live feed is the source of truth
-// for whether anything is actually on today.
+// Season shape is intentionally coarse. A league carries month windows (`season`); the badge
+// is a hint ("In season" / "Offseason" / "Starts in Nd") and the live feed is the source of
+// truth for whether anything is actually on today. A tournament carries `runs`, the real
+// start/end dates of the edition it currently covers, so the archive boundary and the
+// "Starts in Nd" countdown are both exact.
 //
 // `espnPath` slots into: site.web.api.espn.com/apis/site/v2/sports/{espnPath}/scoreboard
 // `college: true` viewers get &groups=50&seasontype=3 appended AND the March-Madness
-//   headline filter applied (see services/espn.js) — the seasontype=3 window also carries
-//   NIT / Crown / WBIT games, which are NOT the tournament.
+//   headline filter applied (see services/espn.js), because the seasontype=3 window also
+//   carries NIT / Crown / WBIT games, which are NOT the tournament. Without `mmHeadline` those
+//   games show as though they were the tournament, so it must survive alongside the fetch config
+//   even while the viewer sits archived, ready to revive.
 // `followKey` is the viewer app's OWN localStorage key for its followed teams. Every app in
 //   the family is deployed under https://ismayc.github.io/<app>/, which is the same origin as
 //   this hub, so the hub reads and writes those keys directly instead of keeping a private
 //   copy. Starring a team here follows it there and back again. See context/follow.jsx.
-//   ARCHIVED viewers carry one too: their picks are never shown here, but the hub must not
-//   drop a key it rewrites.
+//   An archived viewer keeps its key too: its picks are never shown here, but the hub must
+//   not drop a key it rewrites.
+//
+// ONE CAVEAT on the auto-archive, recorded so it is not forgotten (Chester's call,
+// 2026-07-29): the two March Madness viewers are ANNUAL, not quadrennial. Once their edition
+// ends they archive like the rest, so the hub will NOT surface their games the following
+// March until their `runs`/`edition` are advanced to the new year. The other tournaments have
+// no window to miss for years.
 
-export const VIEWERS = [
+const ALL_VIEWERS = [
   {
     id: 'nba',
     name: 'NBA',
@@ -83,7 +90,7 @@ export const VIEWERS = [
     calendarHost: 'premier-league-viewer.netlify.app',
     followKey: 'pl:followed',
     kind: 'league',
-    // Aug–May, wraps the new year. No playoff round — it's a table to the final whistle.
+    // Aug–May, wraps the new year. No playoff round; it's a table to the final whistle.
     season: { startMonth: 8, startDay: 15, endMonth: 5 },
   },
   {
@@ -96,35 +103,11 @@ export const VIEWERS = [
     followKey: 'fwwc:followed',
     kind: 'tournament',
     tournamentLabel: 'World Cup',
-    // 4-13 September 2026, Berlin. LIVE rather than archived because it is being
-    // played right now; move it into ARCHIVED_VIEWERS once the Final is done, as
-    // the next edition is 2030.
-    window: { start: { m: 9, d: 4 }, end: { m: 9, d: 13 } },
+    // 4-13 September 2026, Berlin. Auto-archives on 2026-09-14; next edition is 2030.
+    runs: { start: '2026-09-04', end: '2026-09-13' },
     edition: '2026',
     nextEdition: '2030',
   },
-]
-
-// Finished editions. Their apps are complete, tested archives and stay reachable, but each
-// one's next tournament is a full cycle away, so they live in a collapsed shelf instead of
-// the grid and their feeds are never fetched (see the note at the top of this file).
-//
-// Ordered by `nextEdition`, soonest first, so whatever is closest to mattering again sits at
-// the front. `edition` is the year the app covers. Deliberately NO champion or result in any
-// user-visible field — the hub has a spoiler-free mode, and a label naming the winner would
-// defeat it for someone about to open the archive.
-//
-// THE FETCH CONFIG IS KEPT ON PURPOSE (espnPath / college / mmHeadline / window) even though
-// nothing here is fetched, so reviving one is a straight move of the object back into VIEWERS
-// with no need to reconstruct the fiddly parts — above all `mmHeadline`, without which the
-// college seasontype=3 window drags in NIT / Crown / WBIT games as if they were the
-// tournament.
-//
-// NOTE THE ASYMMETRY the two March Madness entries introduce: they are ANNUAL, not
-// quadrennial. Archiving them (Chester's call, 2026-07-29) means the hub will NOT surface
-// their games in March 2027 until one is moved back into VIEWERS. The other four have no
-// window to miss for years.
-export const ARCHIVED_VIEWERS = [
   {
     id: 'mens-mm',
     name: "Men's March Madness",
@@ -138,7 +121,7 @@ export const ARCHIVED_VIEWERS = [
     college: true,
     // Only rows whose competition headline starts with this are the actual tournament.
     mmHeadline: "NCAA Men's Basketball Championship",
-    window: { start: { m: 3, d: 17 }, end: { m: 4, d: 7 } },
+    runs: { start: '2026-03-17', end: '2026-04-07' },
     edition: '2026',
     nextEdition: '2027',
   },
@@ -154,7 +137,7 @@ export const ARCHIVED_VIEWERS = [
     tournamentLabel: 'Tournament',
     college: true,
     mmHeadline: "NCAA Women's Basketball Championship",
-    window: { start: { m: 3, d: 18 }, end: { m: 4, d: 7 } },
+    runs: { start: '2026-03-18', end: '2026-04-07' },
     edition: '2026',
     nextEdition: '2027',
   },
@@ -168,10 +151,10 @@ export const ARCHIVED_VIEWERS = [
     followKey: 'wwc:followed',
     kind: 'tournament',
     tournamentLabel: 'Tournament',
-    // The 2023 window (20 Jul – 20 Aug, Australia & New Zealand). Every `window` in this
-    // array is the ARCHIVED edition's, which is all that can be known — reset it to the new
-    // dates when reviving, or the "Starts in Nd" countdown will point at the wrong month.
-    window: { start: { m: 7, d: 20 }, end: { m: 8, d: 20 } },
+    // The 2023 edition (Australia & New Zealand). `runs` is this edition's real dates; reset
+    // it to the new dates when reviving, or the "Starts in Nd" countdown points at the wrong
+    // day.
+    runs: { start: '2023-07-20', end: '2023-08-20' },
     edition: '2023',
     nextEdition: '2027',
   },
@@ -185,7 +168,7 @@ export const ARCHIVED_VIEWERS = [
     followKey: 'euros:followed',
     kind: 'tournament',
     tournamentLabel: 'Tournament',
-    window: { start: { m: 6, d: 14 }, end: { m: 7, d: 14 } },
+    runs: { start: '2024-06-14', end: '2024-07-14' },
     edition: '2024',
     nextEdition: '2028',
   },
@@ -199,7 +182,7 @@ export const ARCHIVED_VIEWERS = [
     followKey: 'copa:followed',
     kind: 'tournament',
     tournamentLabel: 'Tournament',
-    window: { start: { m: 6, d: 20 }, end: { m: 7, d: 14 } },
+    runs: { start: '2024-06-20', end: '2024-07-14' },
     edition: '2024',
     nextEdition: '2028',
   },
@@ -213,12 +196,30 @@ export const ARCHIVED_VIEWERS = [
     followKey: 'wc2026:followed',
     kind: 'tournament',
     tournamentLabel: 'Tournament',
-    window: { start: { m: 6, d: 11 }, end: { m: 7, d: 19 } },
+    runs: { start: '2026-06-11', end: '2026-07-19' },
     edition: '2026',
     nextEdition: '2030',
   },
 ]
 
-export const viewerById = Object.fromEntries(
-  [...VIEWERS, ...ARCHIVED_VIEWERS].map((v) => [v.id, v])
-)
+export { ALL_VIEWERS }
+
+// The local calendar day as an ISO 'YYYY-MM-DD' string. ISO dates sort lexically, so the
+// archive test below is a plain string comparison against `runs.end`.
+const localDayISO = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+// A tournament is archived once the current day is strictly PAST its edition's end date. On
+// the end day itself (the Final) it is still live. Leagues never archive.
+export const isArchived = (v, now = new Date()) =>
+  v.kind === 'tournament' && !!v.runs && localDayISO(now) > v.runs.end
+
+// The set the hub fetches and renders in the grid: everything not currently archived.
+export const liveViewers = (now = new Date()) => ALL_VIEWERS.filter((v) => !isArchived(v, now))
+
+// The Completed-tournaments shelf, ordered by when each competition returns (soonest first),
+// so whatever is closest to mattering again sits at the front.
+export const archivedViewers = (now = new Date()) =>
+  ALL_VIEWERS.filter((v) => isArchived(v, now)).sort((a, b) => Number(a.nextEdition) - Number(b.nextEdition))
+
+export const viewerById = Object.fromEntries(ALL_VIEWERS.map((v) => [v.id, v]))

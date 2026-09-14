@@ -2,22 +2,23 @@ import { describe, it, expect } from 'vitest'
 import { readdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { VIEWERS, ARCHIVED_VIEWERS, viewerById } from '../src/data/viewers.js'
+import { ALL_VIEWERS, liveViewers, archivedViewers, isArchived, viewerById } from '../src/data/viewers.js'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const ALL = [...VIEWERS, ...ARCHIVED_VIEWERS]
+const ALL = ALL_VIEWERS
+
+// Two reference days that straddle the FIBA Women's World Cup Final (2026-09-13): during the
+// tournament it is live, the day after it has auto-archived. Local noon so the day never
+// flips across a timezone.
+const DURING = new Date('2026-09-10T12:00:00')
+const AFTER = new Date('2026-09-14T12:00:00')
 
 describe('viewer registry', () => {
-  it('has ids unique ACROSS both lists', () => {
-    // The two lists share an id space: viewerById merges them, and the per-viewer icon is
-    // looked up as icons/<id>.png, so a collision would silently shadow one viewer.
+  it('has ids unique across the whole list', () => {
+    // The per-viewer icon is looked up as icons/<id>.png and viewerById is keyed by id, so a
+    // collision would silently shadow one viewer.
     const ids = ALL.map((v) => v.id)
     expect(new Set(ids).size).toBe(ids.length)
-  })
-
-  it('never lists the same viewer as both live and archived', () => {
-    const live = new Set(VIEWERS.map((v) => v.id))
-    for (const a of ARCHIVED_VIEWERS) expect(live.has(a.id), `${a.id} is in both lists`).toBe(false)
   })
 
   it('gives every viewer a name, an https url and an emoji', () => {
@@ -59,16 +60,16 @@ describe('viewer registry', () => {
     expect(new Set(keys).size).toBe(keys.length)
   })
 
-  it('viewerById resolves live AND archived viewers', () => {
+  it('viewerById resolves every viewer, live or archived', () => {
     expect(viewerById.nba.name).toBe('NBA')
     expect(viewerById.wwc.name).toBe("Women's World Cup")
     expect(Object.keys(viewerById)).toHaveLength(ALL.length)
   })
 })
 
-describe('live viewers', () => {
-  it('all declare an espnPath and a season shape the phase badge can read', () => {
-    for (const v of VIEWERS) {
+describe('viewer shape', () => {
+  it('all declare an espnPath and a shape the phase badge can read', () => {
+    for (const v of ALL) {
       expect(v.espnPath, v.id).toBeTruthy()
       expect(['league', 'tournament']).toContain(v.kind)
       if (v.kind === 'league') {
@@ -76,13 +77,18 @@ describe('live viewers', () => {
         expect(typeof v.season.startMonth).toBe('number')
         expect(typeof v.season.endMonth).toBe('number')
       } else {
-        expect(v.window, v.id).toBeTruthy()
+        // A tournament carries the real start/end dates of the edition it covers, as ISO
+        // 'YYYY-MM-DD' strings with start on or before end.
+        expect(v.runs, v.id).toBeTruthy()
+        expect(v.runs.start, v.id).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+        expect(v.runs.end, v.id).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+        expect(v.runs.start <= v.runs.end, v.id).toBe(true)
       }
     }
   })
 
   it('only college viewers carry the March-Madness headline filter', () => {
-    for (const v of VIEWERS) {
+    for (const v of ALL) {
       if (v.mmHeadline) expect(v.college, v.id).toBe(true)
       // A college viewer without the headline filter would show NIT/WBIT games as if they
       // were the tournament.
@@ -90,77 +96,91 @@ describe('live viewers', () => {
     }
   })
 
-  it('is the four ongoing leagues plus any tournament being played right now', () => {
-    expect(VIEWERS.map((v) => v.id).sort()).toEqual(['epl', 'fiba-wwc', 'nba', 'nfl', 'wnba'])
-    // The grid auto-fits rather than assuming a fixed count; see index.css. It stopped
-    // assuming exactly four when the FIBA Women's World Cup went live on 2026-08-29.
-    for (const v of VIEWERS) expect(['league', 'tournament'], v.id).toContain(v.kind)
-  })
-
-  // A live tournament is the exception, not the rule: it earns a grid tile only while it
-  // is actually on. Anything whose window has passed belongs in ARCHIVED_VIEWERS, or the
-  // hub spends a fetch per page load to render a permanent "Offseason" tile.
-  it('only carries a tournament whose window has not closed', () => {
-    for (const v of VIEWERS.filter((x) => x.kind === 'tournament')) {
-      expect(v.window, v.id).toBeTruthy()
-      expect(Number(v.edition), v.id).toBeGreaterThanOrEqual(2026)
-    }
-  })
-})
-
-describe('archived viewers', () => {
-  it('holds every completed tournament', () => {
-    expect(ARCHIVED_VIEWERS.map((v) => v.id).sort()).toEqual(
-      ['copa', 'euros', 'mens-mm', 'womens-mm', 'worldcup', 'wwc'].sort()
-    )
-  })
-
-  it('is ordered by when the competition returns, soonest first', () => {
-    // Asserted as an invariant rather than a literal list, so adding one keeps the meaning.
-    const years = ARCHIVED_VIEWERS.map((v) => Number(v.nextEdition))
-    expect(years).toEqual([...years].sort((a, b) => a - b))
-  })
-
   it('states the edition covered and when the competition returns', () => {
-    for (const v of ARCHIVED_VIEWERS) {
+    for (const v of ALL.filter((x) => x.kind === 'tournament')) {
       expect(v.edition, v.id).toMatch(/^\d{4}$/)
       expect(v.nextEdition, v.id).toMatch(/^\d{4}$/)
       expect(Number(v.nextEdition), v.id).toBeGreaterThan(Number(v.edition))
     }
   })
+})
 
-  // Archived viewers DO keep their fetch config — see the note in data/viewers.js. What makes
-  // them "archived" is that App never passes them to the feed loader, which app.test.jsx
-  // asserts directly. Here we check the config is intact enough to revive.
-  it('keeps the fetch config so reviving one is a straight move back into VIEWERS', () => {
-    const byId = Object.fromEntries(ARCHIVED_VIEWERS.map((v) => [v.id, v]))
-    for (const v of ARCHIVED_VIEWERS) {
-      expect(v.espnPath, `${v.id} lost its espnPath`).toBeTruthy()
-      expect(v.window, `${v.id} lost its window`).toBeTruthy()
-    }
-    // The subtle one: without mmHeadline the college seasontype=3 window serves NIT/WBIT
-    // games as though they were the tournament.
-    expect(byId['mens-mm'].mmHeadline).toBe("NCAA Men's Basketball Championship")
-    expect(byId['womens-mm'].mmHeadline).toBe("NCAA Women's Basketball Championship")
-    expect(byId['mens-mm'].college).toBe(true)
-    expect(byId['womens-mm'].college).toBe(true)
+describe('auto-archive by end date', () => {
+  it('leaves a tournament live through its Final and archives it the day after', () => {
+    const fiba = viewerById['fiba-wwc'] // runs 2026-09-04 .. 2026-09-13
+    expect(isArchived(fiba, new Date('2026-09-13T12:00:00'))).toBe(false) // the Final, still live
+    expect(isArchived(fiba, new Date('2026-09-14T00:00:00'))).toBe(true) // the day after
   })
 
-  it('flags the annual ones, which are the entries that can actually miss a window', () => {
-    // Both March Madness viewers return in 2027, a year out — unlike the quadrennial four.
-    // This is the trade-off recorded in data/viewers.js, pinned so it is not forgotten.
-    const annual = ARCHIVED_VIEWERS.filter((v) => v.id.endsWith('-mm'))
+  it('never archives a league, whatever the date', () => {
+    for (const v of ALL.filter((x) => x.kind === 'league')) {
+      for (const d of [DURING, AFTER, new Date('2026-01-01T12:00:00')]) {
+        expect(isArchived(v, d), `${v.id} @ ${d.toISOString()}`).toBe(false)
+      }
+    }
+  })
+
+  it('the live set is the four leagues plus a tournament being played', () => {
+    // On 2026-09-10 the FIBA Women's World Cup is on; every other tournament has ended.
+    expect(liveViewers(DURING).map((v) => v.id).sort()).toEqual(
+      ['epl', 'fiba-wwc', 'nba', 'nfl', 'wnba'].sort()
+    )
+    // The day after its Final, the live set falls back to the four ongoing leagues.
+    expect(liveViewers(AFTER).map((v) => v.id).sort()).toEqual(['epl', 'nba', 'nfl', 'wnba'].sort())
+  })
+
+  it('the archived shelf holds every completed tournament, soonest-returning first', () => {
+    // After the FIBA Final, all seven tournaments are archived; ordered by nextEdition.
+    expect(archivedViewers(AFTER).map((v) => v.id)).toEqual([
+      'mens-mm', // 2027
+      'womens-mm', // 2027
+      'wwc', // 2027
+      'euros', // 2028
+      'copa', // 2028
+      'fiba-wwc', // 2030
+      'worldcup', // 2030
+    ])
+    const years = archivedViewers(AFTER).map((v) => Number(v.nextEdition))
+    expect(years).toEqual([...years].sort((a, b) => a - b))
+  })
+
+  it('the two lists are always complementary and cover everything', () => {
+    for (const now of [DURING, AFTER]) {
+      const live = new Set(liveViewers(now).map((v) => v.id))
+      const arch = new Set(archivedViewers(now).map((v) => v.id))
+      for (const id of live) expect(arch.has(id), `${id} in both @ ${now.toISOString()}`).toBe(false)
+      expect(live.size + arch.size).toBe(ALL.length)
+    }
+  })
+
+  // Both March Madness viewers are ANNUAL, not quadrennial: they return the very next year,
+  // so once archived the hub will not surface their games again until their runs/edition are
+  // advanced. This is the trade-off recorded in data/viewers.js, pinned so it is not forgotten.
+  it('flags the annual March Madness viewers, which can miss a window', () => {
+    const annual = ALL.filter((v) => v.id.endsWith('-mm'))
     expect(annual).toHaveLength(2)
     for (const v of annual) expect(Number(v.nextEdition) - Number(v.edition)).toBe(1)
   })
 
+  it('keeps the fetch config so a revived tournament just needs new dates', () => {
+    // The subtle one: without mmHeadline the college seasontype=3 window serves NIT/WBIT
+    // games as though they were the tournament.
+    expect(viewerById['mens-mm'].mmHeadline).toBe("NCAA Men's Basketball Championship")
+    expect(viewerById['womens-mm'].mmHeadline).toBe("NCAA Women's Basketball Championship")
+    expect(viewerById['mens-mm'].college).toBe(true)
+    expect(viewerById['womens-mm'].college).toBe(true)
+    for (const v of ALL.filter((x) => x.kind === 'tournament')) {
+      expect(v.espnPath, `${v.id} lost its espnPath`).toBeTruthy()
+      expect(v.runs, `${v.id} lost its runs`).toBeTruthy()
+    }
+  })
+
   it('names no champion or result anywhere, so the shelf cannot spoil an archive', () => {
     // Spoiler-free mode is a first-class feature; a label like "Spain won" in the always
-    // visible shelf would defeat it before the user even opens the app.
-    // Scoped to the fields the shelf actually RENDERS. `mmHeadline` legitimately contains
-    // "Championship" — it is the competition's name in ESPN's feed, not a result — and it is
-    // never displayed; archived-shelf.test.jsx checks the rendered text as well.
-    const shown = ARCHIVED_VIEWERS.map((v) => [v.name, v.edition, v.nextEdition].join(' '))
+    // visible shelf would defeat it before the user even opens the app. Scoped to the fields
+    // the shelf actually RENDERS. `mmHeadline` legitimately contains "Championship" (the
+    // competition's name in ESPN's feed, not a result) and is never displayed.
+    const shown = ALL.map((v) => [v.name, v.edition, v.nextEdition].join(' '))
     for (const word of ['won', 'champion', 'beat', 'winner']) {
       for (const line of shown) {
         expect(line.toLowerCase(), `visible label "${line}" mentions "${word}"`).not.toContain(word)

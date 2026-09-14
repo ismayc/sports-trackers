@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { seasonPhase } from '../src/utils/phase.js'
-import { VIEWERS } from '../src/data/viewers.js'
+import { ALL_VIEWERS } from '../src/data/viewers.js'
 
 const league = (over = {}) => ({
   kind: 'league',
@@ -10,7 +10,7 @@ const league = (over = {}) => ({
 const tournament = (over = {}) => ({
   kind: 'tournament',
   tournamentLabel: 'Tournament',
-  window: { start: { m: 3, d: 17 }, end: { m: 4, d: 7 } },
+  runs: { start: '2026-03-17', end: '2026-04-07' },
   ...over,
 })
 const on = (y, m, d) => new Date(y, m - 1, d)
@@ -33,7 +33,7 @@ describe('seasonPhase — tournaments', () => {
     expect(p.label).toBe('Tournament')
   })
 
-  it('counts down inside 30 days of the window opening', () => {
+  it('counts down inside 30 days of the edition opening', () => {
     const p = seasonPhase(tournament(), { now: on(2026, 3, 7) })
     expect(p).toEqual({ label: 'Starts in 10d', tone: 'soon', days: 10 })
   })
@@ -42,8 +42,13 @@ describe('seasonPhase — tournaments', () => {
     expect(seasonPhase(tournament(), { now: on(2026, 1, 1) })).toEqual({ label: 'Offseason', tone: 'cold' })
   })
 
-  it('is offseason with no window at all', () => {
-    expect(seasonPhase(tournament({ window: undefined }), { now: on(2026, 1, 1) })).toEqual({
+  it('is offseason once the edition start has passed with no games', () => {
+    // A concrete runs.start in the past yields a negative countdown, which is not "soon".
+    expect(seasonPhase(tournament(), { now: on(2026, 3, 20) })).toEqual({ label: 'Offseason', tone: 'cold' })
+  })
+
+  it('is offseason with no runs at all', () => {
+    expect(seasonPhase(tournament({ runs: undefined }), { now: on(2026, 1, 1) })).toEqual({
       label: 'Offseason',
       tone: 'cold',
     })
@@ -124,7 +129,7 @@ describe('seasonPhase — leagues', () => {
 
 describe('every configured viewer produces a valid badge year-round', () => {
   it('never returns an undefined label or an unknown tone', () => {
-    for (const v of VIEWERS) {
+    for (const v of ALL_VIEWERS) {
       for (let m = 1; m <= 12; m++) {
         const p = seasonPhase(v, { now: on(2026, m, 15) })
         expect(p.label, `${v.id} in month ${m}`).toBeTruthy()
@@ -147,7 +152,7 @@ describe('every configured viewer produces a valid badge year-round', () => {
         seen.other += 1
       }
     }
-    for (const v of VIEWERS) {
+    for (const v of ALL_VIEWERS) {
       for (let m = 1; m <= 12; m++) {
         for (const d of [1, 15, 28]) check(seasonPhase(v, { now: on(2026, m, d) }), `${v.id} ${m}/${d}`)
       }

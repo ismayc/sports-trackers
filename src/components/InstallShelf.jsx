@@ -1,10 +1,10 @@
-import { VIEWERS } from '../data/viewers.js'
+import { liveViewers } from '../data/viewers.js'
 
 // The install / subscribe shelf: every shown viewer with an Open link and, where a Netlify
 // calendar feed exists, a webcal:// Subscribe link that adds the season to the user's
 // calendar app. Only viewers that declare a `calendarHost` get a Subscribe button — the
 // hub never invents a feed that isn't there.
-export default function InstallShelf({ viewers = VIEWERS }) {
+export default function InstallShelf({ viewers = liveViewers() }) {
   return (
     <section className="shelf">
       <h2>Install &amp; subscribe</h2>

@@ -3,18 +3,24 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import InstallShelf from '../src/components/InstallShelf.jsx'
 import SportsPicker from '../src/components/SportsPicker.jsx'
 import ServicesPicker from '../src/components/ServicesPicker.jsx'
-import { VIEWERS, ARCHIVED_VIEWERS } from '../src/data/viewers.js'
+import { liveViewers, archivedViewers } from '../src/data/viewers.js'
 import { SERVICE_CATALOG } from '../src/utils/watch.js'
 
+// Pinned mid-tournament (the FIBA Women's World Cup is on), so the live/archived split is
+// fixed regardless of when the suite runs: five live viewers, six archived.
+const NOW = new Date('2026-09-10T12:00:00')
+const LIVE = liveViewers(NOW)
+const ARCHIVED = archivedViewers(NOW)
+
 describe('InstallShelf', () => {
-  it('defaults to every live viewer', () => {
-    render(<InstallShelf />)
-    for (const v of VIEWERS) expect(screen.getByText(v.name)).toBeInTheDocument()
+  it('lists every live viewer', () => {
+    render(<InstallShelf viewers={LIVE} />)
+    for (const v of LIVE) expect(screen.getByText(v.name)).toBeInTheDocument()
   })
 
   it('does NOT list archived tournaments — they have their own shelf', () => {
-    render(<InstallShelf />)
-    for (const v of ARCHIVED_VIEWERS) expect(screen.queryByText(v.name)).not.toBeInTheDocument()
+    render(<InstallShelf viewers={LIVE} />)
+    for (const v of ARCHIVED) expect(screen.queryByText(v.name)).not.toBeInTheDocument()
   })
 
   it('renders an Open link, and a Subscribe link only where a calendar host exists', () => {
@@ -35,7 +41,7 @@ describe('InstallShelf', () => {
   })
 
   it('honours a narrowed viewer list', () => {
-    render(<InstallShelf viewers={VIEWERS.filter((v) => v.id === 'nba')} />)
+    render(<InstallShelf viewers={LIVE.filter((v) => v.id === 'nba')} />)
     expect(screen.getByText('NBA')).toBeInTheDocument()
     expect(screen.queryByText('NFL')).not.toBeInTheDocument()
   })
@@ -45,20 +51,20 @@ describe('SportsPicker', () => {
   const setup = (selected = null) => {
     const onChange = vi.fn()
     const onClose = vi.fn()
-    render(<SportsPicker selected={selected} onChange={onChange} onClose={onClose} />)
+    render(<SportsPicker viewers={LIVE} selected={selected} onChange={onChange} onClose={onClose} />)
     return { onChange, onClose }
   }
 
   it('offers every live viewer, all checked when nothing is narrowed', () => {
     setup(null)
     const boxes = screen.getAllByRole('checkbox')
-    expect(boxes).toHaveLength(VIEWERS.length)
+    expect(boxes).toHaveLength(LIVE.length)
     expect(boxes.every((b) => b.checked)).toBe(true)
   })
 
   it('does not offer archived tournaments', () => {
     setup(null)
-    for (const v of ARCHIVED_VIEWERS) expect(screen.queryByText(v.name)).not.toBeInTheDocument()
+    for (const v of ARCHIVED) expect(screen.queryByText(v.name)).not.toBeInTheDocument()
   })
 
   it('unchecking one reports the remaining ids', () => {
@@ -66,11 +72,11 @@ describe('SportsPicker', () => {
     fireEvent.click(screen.getByText('NBA'))
     const ids = onChange.mock.calls[0][0]
     expect(ids).not.toContain('nba')
-    expect(ids).toHaveLength(VIEWERS.length - 1)
+    expect(ids).toHaveLength(LIVE.length - 1)
   })
 
   it('reports null once everything is checked again, so a future viewer shows by default', () => {
-    const { onChange } = setup(VIEWERS.filter((v) => v.id !== 'nba').map((v) => v.id))
+    const { onChange } = setup(LIVE.filter((v) => v.id !== 'nba').map((v) => v.id))
     fireEvent.click(screen.getByText('NBA'))
     expect(onChange).toHaveBeenCalledWith(null)
   })
@@ -114,7 +120,7 @@ describe('SportsPicker', () => {
 
   it('stops listening for Escape once unmounted', () => {
     const onClose = vi.fn()
-    const { unmount } = render(<SportsPicker selected={null} onChange={vi.fn()} onClose={onClose} />)
+    const { unmount } = render(<SportsPicker viewers={LIVE} selected={null} onChange={vi.fn()} onClose={onClose} />)
     unmount()
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(onClose).not.toHaveBeenCalled()

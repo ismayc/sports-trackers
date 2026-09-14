@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { VIEWERS, ARCHIVED_VIEWERS } from '../data/viewers.js'
+import { ALL_VIEWERS } from '../data/viewers.js'
 
 // The hub's cross-sport follow set, and it is NOT the hub's own store.
 //
@@ -22,7 +22,7 @@ import { VIEWERS, ARCHIVED_VIEWERS } from '../data/viewers.js'
 //     archived entries carry a followKey too: otherwise a first visit here would wipe the
 //     teams someone follows in the World Cup archive.
 
-const ALL = [...VIEWERS, ...ARCHIVED_VIEWERS]
+const ALL = ALL_VIEWERS
 const STORE_KEYS = new Set(ALL.map((v) => v.followKey))
 
 // The hub's retired private key, kept only long enough to lift existing picks across.

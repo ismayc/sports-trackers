@@ -55,6 +55,7 @@ describe('viewer registry', () => {
       copa: 'copa:followed',
       worldcup: 'wc2026:followed',
       'fiba-wwc': 'fwwc:followed',
+      'fiba-mwc': 'fmwc:followed',
     })
     const keys = ALL.map((v) => v.followKey)
     expect(new Set(keys).size).toBe(keys.length)
@@ -130,8 +131,10 @@ describe('auto-archive by end date', () => {
   })
 
   it('the archived shelf holds every completed tournament, soonest-returning first', () => {
-    // After the FIBA Final, all seven tournaments are archived; ordered by nextEdition.
+    // After the FIBA Women's Final, all eight tournaments are archived; ordered by nextEdition.
+    // Ties keep array order, so within the 2027 group FIBA Men's (listed first) leads.
     expect(archivedViewers(AFTER).map((v) => v.id)).toEqual([
+      'fiba-mwc', // 2027
       'mens-mm', // 2027
       'womens-mm', // 2027
       'wwc', // 2027

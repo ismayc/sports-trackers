@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import ArchivedShelf from '../src/components/ArchivedShelf.jsx'
 import { archivedViewers } from '../src/data/viewers.js'
 
-// The day after the FIBA Women's World Cup Final: all seven tournaments are archived. Pinned
+// The day after the FIBA Women's World Cup Final: all eight tournaments are archived. Pinned
 // so the shelf's contents do not depend on the wall clock.
 const NOW = new Date('2026-09-14T12:00:00')
 const ARCH = archivedViewers(NOW)
@@ -55,6 +55,7 @@ describe('ArchivedShelf', () => {
     render(<ArchivedShelf viewers={ARCH} />)
     const labels = screen.getAllByRole('link').map((a) => a.textContent.replace(/\s+/g, ' ').trim())
     expect(labels).toEqual([
+      "FIBA Men's World Cup 2023",
       "Men's March Madness 2026",
       "Women's March Madness 2026",
       "Women's World Cup 2023",

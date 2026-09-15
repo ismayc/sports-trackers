@@ -109,6 +109,22 @@ const ALL_VIEWERS = [
     nextEdition: '2030',
   },
   {
+    id: 'fiba-mwc',
+    name: "FIBA Men's World Cup",
+    emoji: '🏀',
+    espnPath: 'basketball/fiba',
+    url: 'https://ismayc.github.io/fiba-mens-world-cup-viewer/',
+    calendarHost: 'fiba-mens-world-cup-viewer.netlify.app',
+    followKey: 'fmwc:followed',
+    kind: 'tournament',
+    tournamentLabel: 'World Cup',
+    // The 2023 edition, co-hosted by the Philippines, Japan and Indonesia (25 August to
+    // 10 September). Long archived; the next edition is 2027. Reset `runs` when reviving.
+    runs: { start: '2023-08-25', end: '2023-09-10' },
+    edition: '2023',
+    nextEdition: '2027',
+  },
+  {
     id: 'mens-mm',
     name: "Men's March Madness",
     emoji: '🏀',

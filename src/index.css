@@ -35,6 +35,10 @@
   --logo-chip: rgba(255, 255, 255, 0.92);
 
   --radius: 2px;
+  /* The display voice: Saira Semi Condensed, the athletic / scoreboard cut. Used
+     for every heading, the wordmark, and tabular scoreboard figures. Body stays
+     in the upright Saira set on <body>. Mode-independent, so it lives here only. */
+  --display: 'Saira Semi Condensed', 'Saira', system-ui, -apple-system, sans-serif;
   /* No shadow: structure comes from rules and the grid. The float shadow stays
      for a surface that genuinely floats, like a modal. */
   --shadow: none;
@@ -83,7 +87,7 @@ body {
   background-image: var(--page-bg);
   background-attachment: fixed;
   color: var(--text);
-  font: 15px/1.5 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font: 15px/1.5 'Saira', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
 }
@@ -99,20 +103,38 @@ h3 {
   line-height: 1.2;
 }
 
-/* The display voice: the SAME family, pushed wide and heavy. One typeface used
-   at two extremes reads as two, without the mismatch of an actual second face.
-   Here it is spent on the headings that name a thing. The hub's figures live
-   inside sentences ("Fever 95 @ Dream 88") rather than in columns, so they take
-   tabular figures where they appear and not this. */
+/* The display voice: Saira Semi Condensed, the athletic / scoreboard cut, upright
+   and tracked-out in caps. It names things (the wordmark, section headings, card
+   titles, and day bands) while the body stays in the wider Saira, so the two cuts of
+   one superfamily read as display vs text without a mismatched second face. */
 .brand h1,
-.summary strong,
 h2,
 .card-title h3,
 .up-date,
 .up-cal-date {
-  font-stretch: 118%;
-  font-weight: 800;
-  letter-spacing: -0.015em;
+  font-family: var(--display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.015em;
+}
+/* Inline emphasis inside a recap sentence ("Fever 95 @ Dream 88"): the condensed
+   cut for weight, but NOT uppercased, since it sits mid-sentence. */
+.summary strong {
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+/* Scoreboard figures and the little tracked-out caps take the condensed cut too, so
+   score pills, the mini calendar lines, the day-grid heads, network chips, and the
+   picker legends read as one athletic system with the headings above. */
+.pill,
+.up-cal-line,
+.up-cal-time,
+.up-cal-head,
+.svc-group legend,
+.row-net,
+.card-net {
+  font-family: var(--display);
 }
 
 .dim {
@@ -137,8 +159,8 @@ h2,
 }
 
 .brand h1 {
-  font-size: 28px;
-  letter-spacing: -0.02em;
+  font-size: 30px;
+  letter-spacing: 0.02em;
 }
 
 .tagline {
@@ -274,7 +296,7 @@ h2,
 }
 .card-title h3 {
   font-size: 17px;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.02em;
 }
 
 .badge {

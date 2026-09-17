@@ -146,44 +146,29 @@ const HORIZON_DAYS = 14
 // games sat in the Jul 28 bucket. Evening games survived, being already filed on the next
 // day, which is why the section emptied on a day of afternoon games rather than shrinking.
 //
-// WHY 2 BACK AND 1 FORWARD IS ENOUGH FOR EVERY ZONE ON EARTH. `dates=D` is not a UTC day —
-// verified against the live feed, `dates=20260728` returned instants from 2026-07-28T23:30Z
+// WHY 2 DAYS BACK IS ENOUGH FOR EVERY ZONE ON EARTH. `dates=D` is not a UTC day. Verified
+// against the live feed, `dates=20260728` returned instants from 2026-07-28T23:30Z
 // through 2026-07-29T02:00Z, i.e. ESPN files by the US EASTERN day. Bounding it in those
 // terms: the earliest instant of the user's local yesterday is (tKey-1) 00:00 at UTC+14, which
-// is (tKey-2) ~05:00 Eastern — never earlier than bucket tKey-2. The latest instant of the
-// user's local today is tKey 23:59 at UTC-12, which is (tKey+1) ~07:00 Eastern — never later
-// than bucket tKey+1. So [tKey-2, tKey+1] always contains both buckets, whatever the zone, and
-// it is wide enough that the exact per-league bucketing convention does not have to be known.
-// Re-bucketing by `tz` below means a surplus day can only add games we then ignore.
+// is (tKey-2) ~05:00 Eastern, never earlier than bucket tKey-2. So going 2 days back always
+// reaches yesterday whatever the zone, without knowing the exact per-league bucketing
+// convention. Re-bucketing by `tz` below means a surplus day can only add games we then ignore.
 const DAYS_BACK = 2
-const DAYS_FORWARD = 1
 
 export async function fetchViewerDay(v, { signal, now = new Date(), tz } = {}) {
-  // Two kinds of query: SINGLE days covering yesterday + today in the user's own zone (each
-  // day is well under the scoreboard's silent event cap, so nothing is thinned), plus forward
-  // RANGES out to the horizon for the look-ahead. A range never drops its earliest games but
-  // thins the middle days of a dense league's window, so the horizon is split into two ~week
-  // ranges: each half's early days are exact, which keeps the two-week breakdown honest for
-  // NBA-density schedules at the cost of one extra request per viewer.
-  // Anchored on the user's OWN today, not on UTC now — see DAYS_BACK above.
+  // One SINGLE-day query per day across the whole window: 2 days back (for yesterday, see
+  // DAYS_BACK above) through the 14-day look-ahead horizon. ESPN dropped multi-day `dates=A-B`
+  // range queries in September 2026 (they now 400 across every league), so the old approach of
+  // a couple of forward ranges silently returned nothing past tomorrow and the two-week
+  // breakdown collapsed to ~2 days. Single days are also each well under the scoreboard's
+  // silent event cap, so a dense league's day is never thinned. Anchored on the user's OWN
+  // today, not on UTC now.
   const tKey = todayKey(tz, now)
   const yKey = addDayKey(tKey, -1)
 
-  const singles = []
-  for (let d = -DAYS_BACK; d <= DAYS_FORWARD; d++) singles.push(addDayKey(tKey, d))
-
-  // Forward coverage starts the day after the last single day, so the span stays contiguous
-  // out to the horizon with no gap and no double-counting.
-  const forwardFrom = addDayKey(tKey, DAYS_FORWARD + 1)
-  const horizonEnd = addDayKey(tKey, HORIZON_DAYS)
-  const splitAt = addDayKey(forwardFrom, Math.ceil(HORIZON_DAYS / 2) - 1)
-
   const compact = (key) => key.replace(/-/g, '')
-  const queries = [
-    ...singles.map(compact),
-    `${compact(forwardFrom)}-${compact(splitAt)}`,
-    `${compact(addDayKey(splitAt, 1))}-${compact(horizonEnd)}`,
-  ]
+  const queries = []
+  for (let d = -DAYS_BACK; d <= HORIZON_DAYS; d++) queries.push(compact(addDayKey(tKey, d)))
 
   // College viewers need the tournament bracket group + postseason type. Harmless for a
   // non-tournament date (the feed just returns whatever seasontype=3 it has, then the

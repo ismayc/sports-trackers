@@ -352,48 +352,39 @@ describe('day bucketing and the look-ahead', () => {
   })
 
   it('sorts everything chronologically and de-duplicates across the day queries', async () => {
-    // The same event legitimately appears in more than one of the five queries.
+    // The same event legitimately appears in the response to more than one day query.
     stubFetch([
       espnEvent({ id: 'b', date: '2026-07-29T23:30Z' }),
       espnEvent({ id: 'a', date: '2026-07-29T22:00Z' }),
     ])
     const f = await run()
     expect(f.today.map((g) => g.id)).toEqual(['a', 'b'])
-    expect(f.today).toHaveLength(2) // not 10, despite five identical query responses
+    expect(f.today).toHaveLength(2) // not 34, despite every one of the 17 day queries echoing them
   })
 
-  it('asks for four single days plus two forward ranges, anchored on the USER\'S today', async () => {
+  it('asks for a single-day query per day from 2 back through the 14-day horizon', async () => {
     const fetchMock = stubFetch([])
     await run()
     const dates = fetchMock.mock.calls.map((c) => String(c[0]).match(/dates=([\d-]+)/)[1])
-    // now = 2026-07-29T18:00Z, which is Jul 29 in New York, so tKey = 2026-07-29 and the
-    // singles run tKey-2 .. tKey+1. The ranges then carry on contiguously to tKey+14.
+    // now = 2026-07-29T18:00Z, which is Jul 29 in New York, so tKey = 2026-07-29. ESPN dropped
+    // multi-day `dates=A-B` ranges (they now 400), so every day tKey-2 .. tKey+14 is its own
+    // single-day query, none of them a range.
     expect(dates).toEqual([
-      '20260727',
-      '20260728',
-      '20260729',
-      '20260730',
-      '20260731-20260806',
-      '20260807-20260812', // tKey + 14
+      '20260727', '20260728', '20260729', '20260730', '20260731',
+      '20260801', '20260802', '20260803', '20260804', '20260805', '20260806',
+      '20260807', '20260808', '20260809', '20260810', '20260811', '20260812',
     ])
+    expect(dates.some((d) => d.includes('-'))).toBe(false)
   })
 
-  it('covers a contiguous span with no gap between the singles and the ranges', async () => {
+  it('covers a contiguous, gap-free span of single days', async () => {
     const fetchMock = stubFetch([])
     await run()
     const dates = fetchMock.mock.calls.map((c) => String(c[0]).match(/dates=([\d-]+)/)[1])
-    // Flatten every requested day, single or range endpoint, and check the union is unbroken.
-    const days = []
-    for (const d of dates) {
-      const [a, b] = d.split('-')
-      days.push(a)
-      if (b) days.push(b)
-    }
     const asDate = (k) => new Date(`${k.slice(0, 4)}-${k.slice(4, 6)}-${k.slice(6)}T12:00:00Z`)
-    for (let i = 1; i < days.length; i++) {
-      const gap = (asDate(days[i]) - asDate(days[i - 1])) / 86400000
-      expect(gap, `gap between ${days[i - 1]} and ${days[i]}`).toBeLessThanOrEqual(7)
-      expect(gap).toBeGreaterThan(0)
+    for (let i = 1; i < dates.length; i++) {
+      const gap = (asDate(dates[i]) - asDate(dates[i - 1])) / 86400000
+      expect(gap, `gap between ${dates[i - 1]} and ${dates[i]}`).toBe(1)
     }
   })
 

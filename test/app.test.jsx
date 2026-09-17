@@ -558,19 +558,25 @@ describe('card ordering', () => {
     )
     const { container } = show()
     await settle()
-    const names = [...container.querySelectorAll('.card-title h3')].map((n) => n.textContent)
-    expect(names[0]).toBe('NBA') // live
-    expect(names[1]).toBe('Premier League') // games today
-    expect(names.indexOf('WNBA')).toBeGreaterThan(1) // in season, no games
+    // Only viewers with something on keep a full card, in rank order.
+    const gridNames = [...container.querySelectorAll('.grid .card-title h3')].map(
+      (n) => n.textContent
+    )
+    expect(gridNames).toEqual(['NBA', 'Premier League']) // live, then games today
+    // Everything with no games recesses to the dormant strip, still in rank order:
+    // WNBA is in season, so it leads the recessed rows over the cold/soon leagues.
+    const dormantNames = [...container.querySelectorAll('.dormant-name')].map((n) => n.textContent)
+    expect(dormantNames[0]).toBe('WNBA')
   })
 
   it('orders the "starts soon" tier by how soon', async () => {
     const { container } = show()
     await settle()
-    const names = [...container.querySelectorAll('.card-title h3')].map((n) => n.textContent)
-    // On 29 Jul 2026: WNBA is the only one in season, so it leads. Then the "starts soon"
-    // tier, sorted by how soon: Premier League opens 15 Aug (17d) before the NFL's 4 Sep
-    // (37d). Everything else is cold.
+    // On 29 Jul 2026 nothing is on anywhere, so every viewer recesses to the dormant
+    // strip, still in rank order: WNBA is the only one in season, so it leads. Then the
+    // "starts soon" tier, sorted by how soon: Premier League opens 15 Aug (17d) before
+    // the NFL's 4 Sep (37d). Everything else is cold.
+    const names = [...container.querySelectorAll('.dormant-name')].map((n) => n.textContent)
     expect(names[0]).toBe('WNBA')
     expect(names[1]).toBe('Premier League')
     expect(names[2]).toBe('NFL')

@@ -14,6 +14,7 @@ import TeamsPicker from './components/TeamsPicker.jsx'
 import UpcomingSchedule from './components/UpcomingSchedule.jsx'
 import YesterdayRecap from './components/YesterdayRecap.jsx'
 import ArchivedShelf from './components/ArchivedShelf.jsx'
+import DormantStrip from './components/DormantStrip.jsx'
 
 const EMPTY_FEED = (id) => ({ id, ok: false, today: [], live: 0, yesterday: [], upcoming: [], next: null, postseason: false })
 
@@ -231,6 +232,21 @@ export default function App() {
     )
   }, [visibleViewers, feedById, now])
 
+  // A viewer we reached that has nothing today and nothing in the next two weeks
+  // recesses to a one-line row instead of a full card (see DormantStrip). A failed
+  // feed is NOT dormant: it keeps its card so the "couldn't reach" message shows.
+  // Neither is any viewer while a team/service filter is on: there the empty card
+  // carries the "nothing for your teams" feedback, which the strip would drop.
+  const anyFilterActive = filterActive || teamFilterActive
+  const isDormant = (c) =>
+    !anyFilterActive &&
+    c.feed.ok &&
+    c.feed.today.length === 0 &&
+    c.feed.live === 0 &&
+    !c.feed.next
+  const activeCards = cards.filter((c) => !isDormant(c))
+  const dormantCards = cards.filter(isDormant)
+
   const totalToday = visibleFeeds.reduce((n, f) => n + f.today.length, 0)
   const totalLive = visibleFeeds.reduce((n, f) => n + f.live, 0)
   const totalUpcoming = visibleFeeds.reduce((n, f) => n + (f.upcoming?.length || 0), 0)
@@ -343,7 +359,7 @@ export default function App() {
       <MyTeams feeds={visibleFeeds} tz={tz} hideScores={hideScores} />
 
       <section className="grid">
-        {cards.map(({ v, feed, phase }) => (
+        {activeCards.map(({ v, feed, phase }) => (
           <ViewerCard
             key={v.id}
             viewer={v}
@@ -356,6 +372,8 @@ export default function App() {
           />
         ))}
       </section>
+
+      <DormantStrip items={dormantCards} />
 
       <YesterdayRecap feeds={visibleFeeds} tz={tz} hideScores={hideScores} />
 

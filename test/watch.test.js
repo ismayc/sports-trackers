@@ -33,6 +33,19 @@ describe('watchableServices', () => {
     expect(watchableServices(['Peacock'], ['peacock']).map((s) => s.key)).toEqual(['peacock'])
   })
 
+  it('counts an NBC national broadcast as watchable on Peacock (it simulcasts)', () => {
+    // NFL / NBA / EPL games on NBC stream live on Peacock, but ESPN tags them only "NBC".
+    expect(watchableServices(['NBC'], ['peacock']).map((s) => s.key)).toEqual(['peacock'])
+  })
+
+  it('does not count a USA Network (Versant) game as watchable on Peacock', () => {
+    // Post-Versant, USA games no longer stream live on Peacock; a bundle carries them instead.
+    for (const net of ['USA', 'USA Net']) {
+      expect(watchableServices([net], ['peacock'])).toEqual([])
+      expect(watchableServices([net], ['youtubetv']).map((s) => s.key)).toEqual(['youtubetv'])
+    }
+  })
+
   it('matches a bundle via a linear network it carries', () => {
     expect(watchableServices(['ESPN'], ['youtubetv']).map((s) => s.key)).toEqual(['youtubetv'])
   })

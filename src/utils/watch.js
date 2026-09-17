@@ -41,7 +41,11 @@ const carries = (...names) => {
 
 export const SERVICE_CATALOG = [
   // Streaming services, matched by their own name (+ the linear net some of them restream).
-  { key: 'peacock', label: 'Peacock', kind: 'stream', match: carries('Peacock') },
+  // Peacock also carries NBC: every NBC national broadcast (NFL, NBA, and the EPL) streams
+  // live on Peacock, but ESPN tags those games only "NBC". USA Network is NOT added: since
+  // NBCUniversal spun its cable channels off into Versant (late 2025) they no longer stream
+  // live on Peacock, only a next-day replay. (USA still reaches you through a bundle below.)
+  { key: 'peacock', label: 'Peacock', kind: 'stream', match: carries('Peacock', NBC) },
   { key: 'paramount', label: 'Paramount+', kind: 'stream', match: carries('Paramount+', CBS) },
   { key: 'max', label: 'Max', kind: 'stream', match: carries('Max', 'HBO Max', TNT, TBS, TRUTV) },
   { key: 'prime', label: 'Prime Video', kind: 'stream', match: carries('Prime Video') },

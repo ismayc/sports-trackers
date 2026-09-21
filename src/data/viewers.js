@@ -26,6 +26,9 @@
 //   carries NIT / Crown / WBIT games, which are NOT the tournament. Without `mmHeadline` those
 //   games show as though they were the tournament, so it must survive alongside the fetch config
 //   even while the viewer sits archived, ready to revive.
+// `breaks` (leagues) are the dated spans when the competition stops but the season has not
+//   ended — the Premier League's international breaks. The feed shows the hole and never the
+//   reason, so these are configured; see the epl entry for the season's windows.
 // `followKey` is the viewer app's OWN localStorage key for its followed teams. Every app in
 //   the family is deployed under https://ismayc.github.io/<app>/, which is the same origin as
 //   this hub, so the hub reads and writes those keys directly instead of keeping a private
@@ -38,6 +41,8 @@
 // ends they archive like the rest, so the hub will NOT surface their games the following
 // March until their `runs`/`edition` are advanced to the new year. The other tournaments have
 // no window to miss for years.
+
+import { localDayISO } from '../utils/time.js'
 
 const ALL_VIEWERS = [
   {
@@ -92,6 +97,35 @@ const ALL_VIEWERS = [
     kind: 'league',
     // Aug–May, wraps the new year. No playoff round; it's a table to the final whistle.
     season: { startMonth: 8, startDay: 15, endMonth: 5 },
+    // INTERNATIONAL BREAKS — the one quiet spell in this hub that has a name. Two or three
+    // times a season the league stops dead for a FIFA window: the feed has no fixtures for
+    // two or three weeks, so the card empties, finds nothing in the 14-day look-ahead, and
+    // recesses to the dormant strip looking exactly like a league in its offseason. The gap
+    // is visible; the REASON is not, and an empty Premier League in late September reads as
+    // a broken feed. Nothing in the scoreboard payload says "international break" — unlike
+    // "Playoffs", which the feed's season type gives away (see utils/phase) — so this is the
+    // one season-shape fact that has to be configured by hand.
+    //
+    // Each entry is the span of days with NO league fixtures, which is what the badge and
+    // the page note are answering; the FIFA window in the comment is the reason for it, and
+    // the two are not the same dates. `resumes` is the first matchday back, and is omitted
+    // while the fixtures on the far side of a window have no dates yet.
+    //
+    // 2026-27, from the Premier League's own calendar and checked against the ESPN feed the
+    // hub reads:
+    //   - 21 Sep – 6 Oct is ONE merged 16-day window this season: the old September and
+    //     October breaks combined, four internationals per country instead of two. MW5
+    //     finished 20 Sep and MW6 is 10 Oct, so nineteen days with no league football —
+    //     long enough to clear the whole look-ahead twice over.
+    //   - 9–17 Nov: MW10 played 7–8 Nov, MW11 is 21–22 Nov.
+    //   - 22–30 Mar 2027: MW30 played 20 Mar. MW31's dates are not published yet, so that
+    //     window stops where the FIFA one does and carries no `resumes`; widen it when the
+    //     spring fixtures land.
+    breaks: [
+      { start: '2026-09-21', end: '2026-10-09', resumes: '2026-10-10' },
+      { start: '2026-11-09', end: '2026-11-20', resumes: '2026-11-21' },
+      { start: '2027-03-21', end: '2027-03-30' },
+    ],
   },
   {
     id: 'fiba-wwc',
@@ -219,11 +253,6 @@ const ALL_VIEWERS = [
 ]
 
 export { ALL_VIEWERS }
-
-// The local calendar day as an ISO 'YYYY-MM-DD' string. ISO dates sort lexically, so the
-// archive test below is a plain string comparison against `runs.end`.
-const localDayISO = (d) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 // A tournament is archived once the current day is strictly PAST its edition's end date. On
 // the end day itself (the Final) it is still live. Leagues never archive.

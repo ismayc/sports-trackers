@@ -101,3 +101,19 @@ export function daysUntilDate(now, iso) {
 }
 
 const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+
+// The local calendar day as 'YYYY-MM-DD'. ISO dates sort lexically, so a plain string
+// comparison answers "is today inside this window?" — which is how a tournament's archive
+// boundary (data/viewers) and a league's international break (utils/phase) are both read.
+export const localDayISO = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+// "Sat, Oct 10" for a plain 'YYYY-MM-DD' calendar date — a date with no time and therefore
+// no zone, unlike every other formatter here, which take an absolute instant. Anchored at
+// noon UTC and read back in UTC so the day can never slide either side of a midnight: the
+// date a fixture list prints is the same date everywhere on earth.
+export function formatDayISO(iso) {
+  return fmt('UTC', { weekday: 'short', month: 'short', day: 'numeric' }).format(
+    new Date(`${iso}T12:00:00Z`)
+  )
+}

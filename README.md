@@ -47,6 +47,34 @@ up". The hub drops any event ESPN stamps `season.type === 1` and says so at the 
 page, because an unexplained empty NFL card reads as a bug. Only type 1 is dropped: 3 is the
 postseason and 5 is the NBA play-in, both of which must show.
 
+## International breaks are named, not left blank
+
+Two or three times a season the Premier League stops dead for a FIFA window, and the feed
+carries no fixtures at all for the duration. Nothing in ESPN's payload says why — the games
+are simply not there — so the card empties, finds nothing in the 14-day look-ahead, and
+recesses to the dormant strip looking exactly like a league in its offseason. In **2026-27
+the September and October windows are merged into one 16-day break**: MW5 finished 20 Sep
+and MW6 is 10 Oct, nineteen days with no league football, which clears the hub's whole
+horizon twice over. An unexplained three-week hole reads as a dead feed, so the hub says it
+out loud:
+
+- the card's badge reads **Int’l break** instead of the vaguer "In season";
+- the dormant row says the same, in place of "nothing in the next two weeks";
+- a line under the summary names the league and **when football is back** ("no fixtures
+  until Sat, Oct 10") — the one thing neither badge can carry.
+
+This is the hub's **only** hand-configured season-shape fact beyond the month windows
+themselves (`breaks` on the `epl` viewer in `src/data/viewers.js`), because it is the only
+one the feed cannot give up. It still loses to the feed: a fixture inside a window means the
+calendar drifted, not the scoreboard, so the badge falls back to "In season" and the note
+disappears — the same rule that governs "Playoffs". The 2026-27 windows are the league's own
+published dates, checked against the feed; March's `resumes` is deliberately absent because
+MW31's dates are not published yet, and the note drops the return date rather than invent
+one. **When the 2027-28 fixture list lands, those three entries need replacing** — an out of
+date window is the one way this goes wrong, and it fails loudly: `test/viewers.test.js`
+asserts the windows are ordered, non-overlapping, in season, and that each `resumes` is the
+day after its window ends.
+
 ## How it works
 
 Like the rest of the family: **zero backend, no API key, no `.env`.** At page load the
@@ -117,6 +145,9 @@ parts, not UTC), and renders:
   as two ~week ranges instead of one (`services/espn.js`).
 - **Preseason.** Exhibition games arrive in an ordinary date query and are dropped by
   `season.type === 1` — see the section above, and `isPreseason` in `services/espn.js`.
+- **International breaks.** A FIFA window empties the Premier League feed for two or three
+  weeks. The gap is real data, not a fault, and the hub labels it from `breaks` in
+  `src/data/viewers.js` rather than leaving an offseason-shaped hole — see the section above.
 - **Graceful offseason.** An empty or unreachable feed never throws — the card falls back
   to its season-phase badge. That is also why a finished quadrennial tournament belongs in
   `ARCHIVED_VIEWERS` rather than the grid: its feed is reachable but empty for years, so a

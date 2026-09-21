@@ -10,6 +10,8 @@ import {
   todayKey,
   formatDayTime,
   daysUntilMonthDay,
+  localDayISO,
+  formatDayISO,
 } from '../src/utils/time.js'
 
 afterEach(() => vi.restoreAllMocks())
@@ -138,5 +140,52 @@ describe('daysUntilMonthDay', () => {
     const early = daysUntilMonthDay(new Date(2026, 6, 29, 0, 1), 8, 5)
     const late = daysUntilMonthDay(new Date(2026, 6, 29, 23, 59), 8, 5)
     expect(early).toBe(late)
+  })
+})
+
+describe('localDayISO', () => {
+  it('is the local calendar day, zero-padded', () => {
+    expect(localDayISO(new Date(2026, 8, 7, 23, 59))).toBe('2026-09-07')
+    expect(localDayISO(new Date(2027, 0, 1, 0, 0))).toBe('2027-01-01')
+  })
+
+  it('does not shift to UTC — late evening is still today', () => {
+    // The whole point: a break window and an archive boundary turn over on the user's
+    // midnight, not on UTC's. Late on the 20th must not already read as the 21st.
+    const late = new Date(2026, 8, 20, 22, 30)
+    expect(localDayISO(late)).toBe('2026-09-20')
+    // Sanity: that same instant can be the next day in UTC, which is exactly the trap.
+    expect(localDayISO(late) <= late.toISOString().slice(0, 10)).toBe(true)
+  })
+
+  it('sorts lexically, which is what the window comparisons rely on', () => {
+    expect(localDayISO(new Date(2026, 8, 9)) < localDayISO(new Date(2026, 8, 10))).toBe(true)
+    expect(localDayISO(new Date(2026, 11, 31)) < localDayISO(new Date(2027, 0, 1))).toBe(true)
+  })
+})
+
+describe('formatDayISO', () => {
+  it('renders a plain calendar date as weekday, month and day', () => {
+    expect(formatDayISO('2026-10-10')).toBe('Sat, Oct 10')
+    expect(formatDayISO('2026-11-21')).toBe('Sat, Nov 21')
+  })
+
+  it('never slides a day either side of a midnight', () => {
+    // A fixture date is a date, not an instant: 10 Oct is 10 Oct wherever you read it. The
+    // helper anchors at noon UTC and formats in UTC precisely so no offset can pull it back
+    // to the 9th or push it to the 11th — the failure a naive `new Date('2026-10-10')`
+    // (midnight UTC, formatted locally) hands anyone west of Greenwich.
+    expect(formatDayISO('2026-10-10')).toBe(
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: 'UTC',
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      }).format(new Date('2026-10-10T12:00:00Z'))
+    )
+    // Month and year edges, where an off-by-one hour would be most visible.
+    expect(formatDayISO('2027-03-01')).toBe('Mon, Mar 1')
+    expect(formatDayISO('2026-12-31')).toBe('Thu, Dec 31')
+    expect(formatDayISO('2027-01-01')).toBe('Fri, Jan 1')
   })
 })

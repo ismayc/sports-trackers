@@ -118,6 +118,94 @@ describe('the preseason note', () => {
   })
 })
 
+describe('the international-break note', () => {
+  // 21 Sep 2026: the Premier League stopped after MW5 the day before and does not play
+  // again until 10 Oct. Its card empties, its next fixture is past the two-week horizon,
+  // and without a word on the page that is indistinguishable from a broken feed.
+  const DURING = new Date('2026-09-21T18:00:00Z')
+  const emptyOn = (when) => liveViewers(when).map((v) => EMPTY(v.id))
+
+  const showOn = (when, feeds = emptyOn(when)) => {
+    vi.setSystemTime(when)
+    fetchAllViewers.mockResolvedValue(feeds)
+    return show()
+  }
+
+  it('names the league and the day football returns', async () => {
+    showOn(DURING)
+    await settle()
+    expect(
+      screen.getByText(/Premier League: international break — no fixtures until Sat, Oct 10\./)
+    ).toBeInTheDocument()
+  })
+
+  it('is not shown on a day with no break on', async () => {
+    showOn(NOW)
+    await settle()
+    expect(screen.queryByText(/international break/)).not.toBeInTheDocument()
+  })
+
+  it('goes away on the first matchday back', async () => {
+    showOn(new Date('2026-10-10T18:00:00Z'))
+    await settle()
+    expect(screen.queryByText(/international break/)).not.toBeInTheDocument()
+  })
+
+  it('yields to the feed: a fixture inside the window means there is no break to explain', async () => {
+    const when = DURING
+    const feeds = liveViewers(when).map((v) =>
+      v.id === 'epl' ? { ...EMPTY('epl'), today: [game({ id: 'g1' })] } : EMPTY(v.id)
+    )
+    showOn(when, feeds)
+    await settle()
+    expect(screen.queryByText(/international break/)).not.toBeInTheDocument()
+    // And the fixture is really there, so the absence above is the rule working rather
+    // than the page failing to render.
+    expect(screen.getByText('1 game today')).toBeInTheDocument()
+  })
+
+  it('agrees with the card it is explaining', async () => {
+    // Note and badge come from one derivation (the card's phase), so they cannot drift:
+    // whenever the line is on the page, a card is wearing the matching badge.
+    const { container } = showOn(DURING)
+    await settle()
+    expect(container.querySelector('.note-break')).toBeTruthy()
+    expect(screen.getByText('Int’l break')).toBeInTheDocument()
+  })
+
+  it('says so plainly when the fixtures on the far side have no dates yet', async () => {
+    // March 2027: the window is known, MW31's dates are not, so the config carries no
+    // `resumes` and the note must not invent a return date.
+    showOn(new Date('2027-03-24T18:00:00Z'))
+    await settle()
+    expect(
+      screen.getByText(/Premier League: international break — no fixtures scheduled yet on the other side\./)
+    ).toBeInTheDocument()
+  })
+
+  it('sits with the preseason note, above the grid', async () => {
+    const { container } = showOn(DURING)
+    await settle()
+    const preseason = container.querySelector('.note-preseason')
+    const note = container.querySelector('.note-break')
+    const grid = container.querySelector('.grid')
+    expect(preseason.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(note.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('recesses the stopped league to the dormant strip, labelled', async () => {
+    // The card has nothing today and nothing in two weeks, so it collapses like an
+    // offseason league would — but the row says why instead of "nothing in the next
+    // two weeks".
+    const { container } = showOn(DURING)
+    await settle()
+    const rows = [...container.querySelectorAll('.dormant-row')]
+    const pl = rows.find((r) => r.querySelector('.dormant-name').textContent === 'Premier League')
+    expect(pl).toBeTruthy()
+    expect(pl.querySelector('.dormant-note').textContent).toBe('Int’l break')
+  })
+})
+
 describe('the archived tournaments shelf', () => {
   it('is present and collapsed', async () => {
     const { container } = show()

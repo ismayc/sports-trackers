@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { seasonPhase } from '../src/utils/phase.js'
+import { seasonPhase, currentBreak } from '../src/utils/phase.js'
 import { ALL_VIEWERS } from '../src/data/viewers.js'
 
 const league = (over = {}) => ({
@@ -160,5 +160,77 @@ describe('every configured viewer produces a valid badge year-round', () => {
     // Both a league and a tournament reach the 'soon' branch, so this is not vacuous.
     expect(seen.soon).toBeGreaterThan(0)
     expect(seen.other).toBeGreaterThan(0)
+  })
+})
+
+describe('seasonPhase — international breaks', () => {
+  // The real Premier League windows, so these tests fail the day the config is wrong.
+  const epl = () => ALL_VIEWERS.find((v) => v.id === 'epl')
+
+  it('names the break instead of leaving an empty card "In season"', () => {
+    // 21 Sep 2026 – 9 Oct 2026: MW5 finished the day before, MW6 is 10 Oct. Nineteen days
+    // in which "In season" over a card with nothing on it is the vaguest possible answer.
+    expect(seasonPhase(epl(), { now: on(2026, 9, 21) })).toEqual({ label: 'Int’l break', tone: 'cold' })
+    expect(seasonPhase(epl(), { now: on(2026, 10, 9) })).toEqual({ label: 'Int’l break', tone: 'cold' })
+  })
+
+  it('is back in season on the matchday either side of a window', () => {
+    expect(seasonPhase(epl(), { now: on(2026, 9, 20) }).label).toBe('In season')
+    expect(seasonPhase(epl(), { now: on(2026, 10, 10) }).label).toBe('In season')
+  })
+
+  it('covers the November and March windows too', () => {
+    expect(seasonPhase(epl(), { now: on(2026, 11, 14) }).label).toBe('Int’l break')
+    expect(seasonPhase(epl(), { now: on(2026, 11, 21) }).label).toBe('In season')
+    expect(seasonPhase(epl(), { now: on(2027, 3, 24) }).label).toBe('Int’l break')
+    expect(seasonPhase(epl(), { now: on(2027, 3, 20) }).label).toBe('In season')
+  })
+
+  it('lets a game on the feed cancel the break — the feed is never overruled by a date', () => {
+    // A fixture inside the window (a rearrangement, or the config drifting from reality)
+    // means the calendar is wrong about that day, not the feed. Same rule as "Playoffs".
+    expect(seasonPhase(epl(), { now: on(2026, 9, 21), hasGames: true }).label).toBe('In season')
+    expect(seasonPhase(epl(), { now: on(2026, 9, 21), postseason: true }).label).toBe('Playoffs')
+  })
+
+  it('sorts down with the quiet cards, because nothing is on', () => {
+    // `cold` is what puts it below the leagues that are actually playing (see rankOf in App).
+    expect(seasonPhase(epl(), { now: on(2026, 9, 21) }).tone).toBe('cold')
+  })
+
+  it('leaves every other viewer alone', () => {
+    // Only the Premier League has breaks configured; nothing else may acquire the label.
+    for (const v of ALL_VIEWERS.filter((x) => x.kind === 'league' && x.id !== 'epl')) {
+      expect(v.breaks, `${v.id} has breaks but nothing knows about them`).toBeUndefined()
+      expect(seasonPhase(v, { now: on(2026, 9, 21) }).label).not.toBe('Int’l break')
+    }
+  })
+})
+
+describe('currentBreak', () => {
+  const epl = () => ALL_VIEWERS.find((v) => v.id === 'epl')
+
+  it('returns the window the day falls in, inclusive at both ends', () => {
+    expect(currentBreak(epl(), on(2026, 9, 21))).toMatchObject({ start: '2026-09-21' })
+    expect(currentBreak(epl(), on(2026, 10, 9))).toMatchObject({ end: '2026-10-09' })
+    expect(currentBreak(epl(), on(2026, 10, 10))).toBeNull()
+  })
+
+  it('carries the first matchday back, so the page note can say when football returns', () => {
+    expect(currentBreak(epl(), on(2026, 9, 25)).resumes).toBe('2026-10-10')
+    expect(currentBreak(epl(), on(2026, 11, 14)).resumes).toBe('2026-11-21')
+    // March's fixtures are not published yet: no `resumes`, and the note says so instead
+    // of inventing a date.
+    expect(currentBreak(epl(), on(2027, 3, 24)).resumes).toBeUndefined()
+  })
+
+  it('is null for a viewer with no breaks at all', () => {
+    expect(currentBreak(league(), on(2026, 9, 21))).toBeNull()
+  })
+
+  it('reads the local day, not UTC — a break does not start an evening early', () => {
+    // Late on 20 Sep west of UTC is already the 21st in UTC. The window is a calendar fact
+    // about the league, so it must turn over on the user's own midnight.
+    expect(currentBreak(epl(), new Date(2026, 8, 20, 23, 30))).toBeNull()
   })
 })

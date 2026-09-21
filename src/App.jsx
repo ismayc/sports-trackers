@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { liveViewers, archivedViewers } from './data/viewers.js'
 import { fetchAllViewers } from './services/espn.js'
-import { seasonPhase } from './utils/phase.js'
-import { detectTimezone, isValidZone, timezoneOptions } from './utils/time.js'
+import { seasonPhase, currentBreak, BREAK_LABEL } from './utils/phase.js'
+import { detectTimezone, formatDayISO, isValidZone, timezoneOptions } from './utils/time.js'
 import { isWatchable } from './utils/watch.js'
 import { useFollow } from './context/follow.jsx'
 import ViewerCard from './components/ViewerCard.jsx'
@@ -232,6 +232,22 @@ export default function App() {
     )
   }, [visibleViewers, feedById, now])
 
+  // The shown leagues stopped for an international break, read straight off the badge the
+  // cards already wear: whether a break is on is `seasonPhase`'s single call (a configured
+  // window that the feed can still overrule — see utils/phase), and asking it twice is how
+  // the page would come to disagree with its own cards. All this adds is the one thing no
+  // badge has room for: when the football is back. A three-week hole with no return date in
+  // sight is the part that reads as a dead feed rather than a scheduled pause.
+  const breakNote = cards
+    .filter((c) => c.phase.label === BREAK_LABEL)
+    .map(({ v }) => {
+      const resumes = currentBreak(v, now).resumes
+      return resumes
+        ? `${v.name}: international break — no fixtures until ${formatDayISO(resumes)}.`
+        : `${v.name}: international break — no fixtures scheduled yet on the other side.`
+    })
+    .join(' ')
+
   // A viewer we reached that has nothing today and nothing in the next two weeks
   // recesses to a one-line row instead of a full card (see DormantStrip). A failed
   // feed is NOT dormant: it keeps its card so the "couldn't reach" message shows.
@@ -304,6 +320,15 @@ export default function App() {
         <span aria-hidden="true">🚫</span> Preseason games are ignored by choice — only games
         that count are shown here.
       </p>
+
+      {/* Same reasoning as the line above, for the other absence that isn't a fault: the
+          league is stopped for a FIFA window, so its card is empty and its next fixture is
+          past the two-week horizon. Shown only while a break is actually on. */}
+      {breakNote && (
+        <p className="note-break">
+          <span aria-hidden="true">🌍</span> {breakNote}
+        </p>
+      )}
 
       <div className="controls">
         <label className="chip chip-select">

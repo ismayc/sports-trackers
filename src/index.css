@@ -874,16 +874,21 @@ h2,
   text-decoration: underline;
 }
 
-/* ── Preseason note ─────────────────────────────────────────────────── */
-/* Sits directly under the summary. Deliberately quiet: it explains an absence, so it must
-   not compete with the thing it is explaining. */
-.note-preseason {
+/* ── Page notes (preseason, international break) ────────────────────── */
+/* Sit directly under the summary. Deliberately quiet: they explain an absence, so they must
+   not compete with the thing they are explaining. */
+.note-preseason,
+.note-break {
   margin: -12px 0 22px;
   font-size: 13px;
   color: var(--text-dim);
   display: flex;
   align-items: baseline;
   gap: 7px;
+}
+/* Stacked, the second note is another line of the same aside, not a new paragraph. */
+.note-preseason + .note-break {
+  margin-top: -16px;
 }
 
 /* ── Archived (completed tournaments) ───────────────────────────────── */

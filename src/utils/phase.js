@@ -8,6 +8,10 @@
 //   - a tournament with games today                            -> "Tournament"
 //   - otherwise fall back to the date-window read.
 //
+// One label runs the other way: a league inside a configured international break (only the
+// Premier League has any) reads "Int’l break" instead of "In season", and a game on the feed
+// that day cancels it. See `currentBreak` and data/viewers.
+//
 // "Playoffs" is deliberately NOT a calendar window. A league's regular season and its
 // postseason routinely share a month — the WNBA runs into late September and its playoffs
 // start after, the NBA overlaps in April/June, the NFL in January — so a month window
@@ -16,10 +20,23 @@
 //
 // `tone` drives the badge colour and the card sort (see App): hot > on > soon > cold.
 
-import { daysUntilMonthDay, daysUntilDate } from './time.js'
+import { daysUntilMonthDay, daysUntilDate, localDayISO } from './time.js'
 
 const inMonthRange = (m, start, end) =>
   start <= end ? m >= start && m <= end : m >= start || m <= end // wraps the new year
+
+// The badge a stopped league wears. Exported so the page can pick those cards out by it
+// rather than repeating the "in a window AND nothing on the feed" test and drifting from it.
+export const BREAK_LABEL = 'Int’l break'
+
+// The break a league is inside right now, or null. Windows are inclusive 'YYYY-MM-DD' spans
+// on the viewer (see data/viewers, epl), so this is a lexical string comparison on the local
+// day — the same test the tournament archive boundary uses. Exported because the page note
+// needs the window itself (its `resumes` date), not just the badge it produces.
+export function currentBreak(v, now = new Date()) {
+  const today = localDayISO(now)
+  return (v.breaks || []).find((b) => today >= b.start && today <= b.end) || null
+}
 
 export function seasonPhase(v, { now = new Date(), hasGames = false, postseason = false } = {}) {
   const m = now.getMonth() + 1
@@ -46,6 +63,13 @@ export function seasonPhase(v, { now = new Date(), hasGames = false, postseason 
     // header on why the calendar can't be trusted for this. On a postseason off-day
     // (no games) this reads "In season", which is vaguer but never wrong.
     if (postseason) return { label: 'Playoffs', tone: 'hot' }
+    // An international break: in season, but the competition is stopped, so "In season" over
+    // an empty card is the vague reading the badge exists to avoid. Configured rather than
+    // derived (the feed shows a hole and never says why), and therefore the feed still
+    // outranks it — a game today means the calendar is wrong about this day, not the feed,
+    // exactly as with "Playoffs" above. `cold` sorts it down beside the offseason cards,
+    // which is honest: nothing is on.
+    if (!hasGames && currentBreak(v, now)) return { label: BREAK_LABEL, tone: 'cold' }
     return { label: 'In season', tone: 'on' }
   }
 

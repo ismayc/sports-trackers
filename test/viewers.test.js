@@ -192,6 +192,72 @@ describe('auto-archive by end date', () => {
   })
 })
 
+describe('international break windows', () => {
+  const withBreaks = ALL.filter((v) => v.breaks)
+  const ISO = /^\d{4}-\d{2}-\d{2}$/
+  const nextDay = (iso) => {
+    const d = new Date(`${iso}T12:00:00Z`)
+    d.setUTCDate(d.getUTCDate() + 1)
+    return d.toISOString().slice(0, 10)
+  }
+
+  it('belong to leagues only', () => {
+    // A tournament that stops mid-edition does not exist; `runs` already bounds it.
+    for (const v of withBreaks) expect(v.kind, `${v.id}`).toBe('league')
+  })
+
+  it('are well-formed ISO spans that do not run backwards', () => {
+    // The windows are compared as strings (see utils/phase currentBreak), so a stray format
+    // would not throw — it would silently never match, and the note would never appear.
+    for (const v of withBreaks) {
+      for (const b of v.breaks) {
+        expect(b.start, `${v.id} ${b.start}`).toMatch(ISO)
+        expect(b.end, `${v.id} ${b.end}`).toMatch(ISO)
+        expect(b.end >= b.start, `${v.id}: ${b.start}..${b.end} ends before it starts`).toBe(true)
+        if (b.resumes) {
+          expect(b.resumes).toMatch(ISO)
+          // The note reads "no fixtures until <resumes>", so it must be the day play is
+          // back — the day after the window, not some later date in the same week.
+          expect(b.resumes, `${v.id}: ${b.end} resumes ${b.resumes}`).toBe(nextDay(b.end))
+        }
+      }
+    }
+  })
+
+  it('are in order and never overlap', () => {
+    // currentBreak returns the FIRST match; overlapping windows would make which one you
+    // get depend on array order, and the note's return date with it.
+    for (const v of withBreaks) {
+      const sorted = [...v.breaks].sort((a, b) => a.start.localeCompare(b.start))
+      expect(v.breaks.map((b) => b.start), `${v.id} is out of order`).toEqual(sorted.map((b) => b.start))
+      for (let i = 1; i < v.breaks.length; i++) {
+        expect(v.breaks[i].start > v.breaks[i - 1].end, `${v.id}: window ${i} overlaps the one before`).toBe(true)
+      }
+    }
+  })
+
+  it('fall inside the season they interrupt', () => {
+    // A break outside the season months would be dead config: the badge only consults it
+    // once the season window is open.
+    for (const v of withBreaks) {
+      const { startMonth, endMonth } = v.season
+      const inSeason = (m) => (startMonth <= endMonth ? m >= startMonth && m <= endMonth : m >= startMonth || m <= endMonth)
+      for (const b of v.breaks) {
+        expect(inSeason(Number(b.start.slice(5, 7))), `${v.id}: ${b.start} is out of season`).toBe(true)
+        expect(inSeason(Number(b.end.slice(5, 7))), `${v.id}: ${b.end} is out of season`).toBe(true)
+      }
+    }
+  })
+
+  it('covers the Premier League and nothing else, for this season', () => {
+    // The hub's other three leagues have no international calendar to stop for. If one
+    // ever gains breaks, this test is the reminder to check the note's wording reads right
+    // for it ("international break" is a football phrase).
+    expect(withBreaks.map((v) => v.id)).toEqual(['epl'])
+    expect(viewerById.epl.breaks.length).toBe(3)
+  })
+})
+
 describe('per-viewer icons exist on disk', () => {
   // The tiles render <img src="icons/<id>.png">; a missing file is a broken image in the UI
   // and nothing in the build catches it.

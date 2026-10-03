@@ -77,13 +77,24 @@ canonical copies each repo vendors (see the header of `scripts/smoke-prod.mjs`).
 **Canonical home for a cross-family note: `sports-viewer-meta/docs/LINEAGES.md`.** A fix
 landed only here is half a fix: the viewer a reader actually opens is a sibling repo.
 
-### Outstanding as of 2026-10-03
+### Rollout status, 2026-10-03
 
-Error 1 is fixed **in this repo only**. It is still live in the sibling viewers — it was
-first spotted in `wnba-schedule`, which is the app that showed the wrong time. Two things
-remain, and neither could be done from the session that found it (the sibling repos were
-not attachable):
+Error 1 is fixed in **this repo** and in **`wnba-schedule`**, the viewer it was spotted in,
+and written up in `sports-viewer-meta/docs/LINEAGES.md` §6 as a trap class rather than a
+one-off. The eleven other viewers are **unverified** — not known to be broken, not known to
+be safe. A sibling only has this bug if it renders a tip time from a feed that can carry a
+placeholder, which most of them do.
 
-1. Copy the error-1 write-up into `sports-viewer-meta/docs/LINEAGES.md`.
-2. Port the fix (`timeValid` → `timeTBD` + `day`, and the three helpers) into each viewer
-   that renders a tip time, starting with `wnba-schedule`.
+`audit-family.mjs` check 14 answers that in one command, for whatever is cloned:
+
+```bash
+node sports-viewer-meta/scripts/audit-family.mjs
+```
+
+It is deliberately the cheap half of the check — it asks whether a fetch script mentions
+`timeValid` at all. Note what that cannot catch, because it is exactly how this bug lived
+so long in `wnba-schedule`: **that repo did handle the flag**, on the path a playoff game
+takes only while one side is still "TBD". When the matchup was decided the game moved to
+the ordinary path and lost the flag. The viewer was correct right until the bracket filled
+in, which is the moment anyone looks. So the check would have passed it. A flag handled on
+one path is not handled — when you touch a fetch script, grep every path that writes a tip.

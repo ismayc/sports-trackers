@@ -77,24 +77,29 @@ canonical copies each repo vendors (see the header of `scripts/smoke-prod.mjs`).
 **Canonical home for a cross-family note: `sports-viewer-meta/docs/LINEAGES.md`.** A fix
 landed only here is half a fix: the viewer a reader actually opens is a sibling repo.
 
-### Rollout status, 2026-10-03
+### Rollout status, 2026-10-03 — complete
 
-Error 1 is fixed in **this repo** and in **`wnba-schedule`**, the viewer it was spotted in,
-and written up in `sports-viewer-meta/docs/LINEAGES.md` §6 as a trap class rather than a
-one-off. The eleven other viewers are **unverified** — not known to be broken, not known to
-be safe. A sibling only has this bug if it renders a tip time from a feed that can carry a
-placeholder, which most of them do.
+All thirteen viewers and this hub carry the fix, and `audit-family.mjs` reports
+**"All invariants hold across 13 repos"**, check 14 included. LINEAGES §6 has the
+write-up.
 
-`audit-family.mjs` check 14 answers that in one command, for whatever is cloned:
+The fix was not the same change thirteen times, and the differences are the useful part:
 
-```bash
-node sports-viewer-meta/scripts/audit-family.mjs
-```
+| Shape | Repos | What it needed |
+|---|---|---|
+| `tip`/`ko` field, `formatTime`+`dayKey`+`countdown` | WNBA, NBA, NFL, both March Madness, hub | `timeTbd` out of the fetch, three helpers routing every call site, `liveState`/`isImminent` guards, all-day ICS |
+| Same idea, other lineage (`timeCore` factory) | Premier League | the same, in its own idiom — `koDay`/`koTime`/`koCountdown`, "Time TBC", and `whenBucket` instead of `liveState` |
+| **Already modelled it** — `ko: null` + `tbdTip: true` | both FIBA viewers | only the upgrade path: a placeholder was allowed to *resolve* an honest "to be confirmed" into a confident wrong time |
+| Committed schedule not from ESPN | Women's World Cup, Euros, Copa, World Cup | the live overlay's instant, which keys knockout matching — a placeholder instant is shared by every untimed game that date, so it pairs whichever two collide |
 
-It is deliberately the cheap half of the check — it asks whether a fetch script mentions
-`timeValid` at all. Note what that cannot catch, because it is exactly how this bug lived
-so long in `wnba-schedule`: **that repo did handle the flag**, on the path a playoff game
-takes only while one side is still "TBD". When the matchup was decided the game moved to
-the ordinary path and lost the flag. The viewer was correct right until the bracket filled
-in, which is the moment anyone looks. So the check would have passed it. A flag handled on
-one path is not handled — when you touch a fetch script, grep every path that writes a tip.
+Two repos were actually wrong at the time, not merely exposed: the **NFL** had 24
+flex-scheduled games (weeks 17 and 18) showing invented kickoffs a day early, and the
+**WNBA** had the four semifinal Games 4 and 5 that started this. Everywhere else the
+change is preventive, and the commits say so rather than implying a save.
+
+The one thing still worth knowing: **check 14 would not have caught the original bug.**
+It asks whether a fetch script mentions `timeValid` at all, and `wnba-schedule` did — on
+the pending-slot path, which a playoff game takes only while one side is still "TBD". When
+the matchup was decided the game moved to the ordinary path and lost the flag. A flag
+handled on one path is not handled; when you touch a fetch script, grep every path that
+writes a time.

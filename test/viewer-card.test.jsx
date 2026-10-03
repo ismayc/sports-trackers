@@ -116,3 +116,26 @@ describe('ViewerCard with a failed feed', () => {
     expect(screen.queryByText(/No games in the next two weeks/)).not.toBeInTheDocument()
   })
 })
+
+describe('ViewerCard next-up with no announced tip time', () => {
+  it('names the day and says the time is TBD, instead of a placeholder hour', () => {
+    const next = game({ tip: '2026-10-04T04:00Z', timeTBD: true, day: '2026-10-04' })
+    render(
+      <FollowProvider>
+        <ViewerCard viewer={NBA} feed={feed({ next })} phase={PHASE} tz="America/Phoenix" />
+      </FollowProvider>
+    )
+    expect(screen.getByText(/Sun, Oct 4 · time TBD/)).toBeInTheDocument()
+    expect(screen.queryByText(/9:00 PM/)).not.toBeInTheDocument()
+  })
+
+  it('still gives a real next-up game its day and time', () => {
+    const next = game({ tip: '2026-10-04T23:00:00Z' })
+    render(
+      <FollowProvider>
+        <ViewerCard viewer={NBA} feed={feed({ next })} phase={PHASE} tz="America/New_York" />
+      </FollowProvider>
+    )
+    expect(screen.getByText(/Sun, Oct 4 · 7:00 pm/)).toBeInTheDocument()
+  })
+})

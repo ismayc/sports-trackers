@@ -24,6 +24,10 @@ export function espnEvent({
   geoBroadcasts = [],
   seasonType = 2,
   seasonSlug = 'regular-season',
+  // ESPN's "tip time not announced": the competition carries timeValid: false and `date`
+  // is a placeholder (midnight US Eastern on the game's day). Undefined by default, which
+  // is the ordinary case of a real time — the field is simply absent from the payload.
+  timeValid = undefined,
   headline = null,
   competitors = undefined,
 } = {}) {
@@ -34,6 +38,7 @@ export function espnEvent({
     competitions: [
       {
         ...(headline ? { notes: [{ headline }] } : {}),
+        ...(timeValid === undefined ? {} : { timeValid }),
         status: { type: { state, completed, shortDetail } },
         broadcasts,
         geoBroadcasts,
@@ -84,6 +89,9 @@ export function game(over = {}) {
     homeLogo: null,
     awayLogo: null,
     state: 'pre',
+    // A real tip time by default; `timeTBD: true` with a `day` is the placeholder case.
+    timeTBD: false,
+    day: null,
     score: null,
     statusLabel: '7:00 PM',
     broadcast: [],

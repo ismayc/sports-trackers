@@ -18,6 +18,14 @@ describe('GameRow', () => {
     expect(screen.getByText('7:00 PM')).toBeInTheDocument()
   })
 
+  it('says "Time TBD" rather than inventing a tip time', () => {
+    // ESPN's placeholder instant is midnight Eastern on game day; rendering it as a clock
+    // is how the viewers came to promise a 9:00 PM game that nobody had scheduled.
+    show({ tip: '2026-10-04T04:00Z', timeTBD: true, day: '2026-10-04' })
+    expect(screen.getByText('Time TBD')).toBeInTheDocument()
+    expect(screen.queryByText(/\d:\d\d (AM|PM)/)).not.toBeInTheDocument()
+  })
+
   it('renders a live game with the score and the status pill', () => {
     show({ state: 'in', score: [55, 60], statusLabel: 'Q3 4:21' })
     expect(screen.getByText('AWY 55 @ HME 60')).toBeInTheDocument()

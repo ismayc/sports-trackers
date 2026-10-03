@@ -214,3 +214,51 @@ describe('UpcomingSchedule', () => {
     expect(container).toBeEmptyDOMElement()
   })
 })
+
+describe('a game with no announced tip time', () => {
+  // The WNBA semifinal of 2026-10-04 as ESPN shipped it: a placeholder instant of midnight
+  // Eastern. Read in Phoenix (UTC-7 all year) that is 9pm on Oct 3 — a day early, at an
+  // hour nobody announced. Anchored here on 2026-10-01 so the game is inside the horizon.
+  const PHX = 'America/Phoenix'
+  const tbd = () =>
+    game({ id: 'sf1', tip: '2026-10-04T04:00Z', timeTBD: true, day: '2026-10-04', awayAbbr: 'NY', homeAbbr: 'ATL' })
+
+  const showPhx = (feeds) =>
+    render(
+      <FollowProvider>
+        <UpcomingSchedule feeds={feeds} tz={PHX} />
+      </FollowProvider>
+    )
+
+  beforeEach(() => vi.setSystemTime(new Date('2026-10-01T19:00:00Z')))
+
+  it('is listed under the day it is played, with no invented clock', () => {
+    const { container } = showPhx([feed({ id: 'wnba', upcoming: [tbd()] })])
+    const headings = [...container.querySelectorAll('.up-day-label, .up-day h3')].map((n) => n.textContent)
+    // Whatever the heading element is called, the day it names must be Oct 4, not Oct 3.
+    expect(headings.join(' ')).toContain('Oct 4')
+    expect(headings.join(' ')).not.toContain('Oct 3')
+    expect(screen.getByText('Time TBD')).toBeInTheDocument()
+  })
+
+  it('lands in the Oct 4 cell of the calendar grid, abbreviated', () => {
+    const { container } = showPhx([feed({ id: 'wnba', upcoming: [tbd()] })])
+    fireEvent.click(screen.getByRole('tab', { name: 'Week' }))
+    const cell = [...container.querySelectorAll('[role="gridcell"]')].find((c) =>
+      c.querySelector('.up-cal-game')
+    )
+    expect(cell).toBeTruthy()
+    expect(cell.querySelector('.up-cal-time').textContent).toBe('TBD')
+    expect(cell.querySelector('.up-cal-line').textContent).toBe('NY @ ATL')
+  })
+
+  it('does not disturb an ordinary game in the same list', () => {
+    // A real instant keeps being bucketed in the reader's zone and keeps its clock.
+    const real = game({ id: 'r1', tip: '2026-10-02T23:00:00Z' }) // 4pm in Phoenix
+    const { container } = showPhx([feed({ id: 'wnba', upcoming: [real, tbd()] })])
+    expect(screen.getByText('4:00 PM')).toBeInTheDocument()
+    expect(screen.getByText('Time TBD')).toBeInTheDocument()
+    const text = container.textContent
+    expect(text.indexOf('Oct 2')).toBeLessThan(text.indexOf('Oct 4'))
+  })
+})

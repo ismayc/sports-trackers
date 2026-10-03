@@ -1,5 +1,5 @@
 import { useFollow } from '../context/follow.jsx'
-import { formatTime } from '../utils/time.js'
+import { gameTime } from '../utils/time.js'
 import TeamLogo from './TeamLogo.jsx'
 
 // One compact game line: a star to follow either team, "AWAY @ HOME", and a right-aligned
@@ -19,7 +19,7 @@ import TeamLogo from './TeamLogo.jsx'
 // ellipsizing (see `.card .row-line` in index.css). The full name is still the row's title.
 export default function GameRow({ viewerId, game, tz, hideScores = false, names = false }) {
   const follow = useFollow()
-  const { away, home, awayAbbr, homeAbbr, awayShort, homeShort, score, state, statusLabel, tip, broadcast } =
+  const { away, home, awayAbbr, homeAbbr, awayShort, homeShort, score, state, statusLabel, broadcast } =
     game
   const net = broadcast?.[0]
   const showScore = score && !hideScores
@@ -30,7 +30,9 @@ export default function GameRow({ viewerId, game, tz, hideScores = false, names 
     ) : state === 'post' ? (
       <span className="pill pill-final">{hideScores ? 'Final' : statusLabel || 'Final'}</span>
     ) : (
-      <span className="pill">{formatTime(tip, tz)}</span>
+      // Not "7:00 PM" for a game nobody has scheduled: a TBD game's instant is a
+      // placeholder, so the pill says so (see gameTime).
+      <span className="pill">{gameTime(game, tz)}</span>
     )
 
   // Each side is one text node so the line still reads "AWY 3 @ HME 4" as a whole; the

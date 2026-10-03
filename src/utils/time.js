@@ -74,6 +74,28 @@ export function addDayKey(key, n) {
   return d.toISOString().slice(0, 10)
 }
 
+// ── A GAME'S DAY AND TIME ───────────────────────────────────────────────────────────
+// Three helpers that every surface showing a game must go through, because a game whose
+// tip time ESPN has not announced carries a PLACEHOLDER instant (midnight US Eastern on
+// the game's date — see `timeTBD` in services/espn). Formatting that instant invents a
+// time, and bucketing it in the user's zone files the game a day early anywhere west of
+// Eastern. These three are where that is handled once instead of at five call sites.
+
+// The calendar day a game belongs to. For an ordinary game that is the day the user sees
+// it in their own zone; for a TBD game the instant cannot answer, so the feed's own filed
+// day stands in.
+export const gameDayKey = (game, tz) => game.day || dayKey(game.tip, tz)
+
+// The right-hand label on a game that has not tipped: its local time, or that no time has
+// been announced. `short` is for the calendar grid's narrow column.
+export const gameTime = (game, tz, { short = false } = {}) =>
+  game.timeTBD ? (short ? 'TBD' : 'Time TBD') : formatTime(game.tip, tz)
+
+// "Sun, Oct 4 · 7:00pm", or "Sun, Oct 4 · time TBD" — the one-line "next up". The day is
+// still exact for a TBD game; only the clock is unknown, and the line says which.
+export const gameDayTime = (game, tz) =>
+  game.timeTBD ? `${formatDayISO(gameDayKey(game, tz))} · time TBD` : formatDayTime(game.tip, tz)
+
 // "Fri 7:00pm" — one compact string for a next-up game.
 export function formatDayTime(iso, tz) {
   // Weekday + date, since "next up" can be up to two weeks out and a bare weekday would be

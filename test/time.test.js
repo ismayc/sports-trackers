@@ -12,6 +12,9 @@ import {
   daysUntilMonthDay,
   localDayISO,
   formatDayISO,
+  gameDayKey,
+  gameTime,
+  gameDayTime,
 } from '../src/utils/time.js'
 
 afterEach(() => vi.restoreAllMocks())
@@ -187,5 +190,44 @@ describe('formatDayISO', () => {
     expect(formatDayISO('2027-03-01')).toBe('Mon, Mar 1')
     expect(formatDayISO('2026-12-31')).toBe('Thu, Dec 31')
     expect(formatDayISO('2027-01-01')).toBe('Fri, Jan 1')
+  })
+})
+
+describe('a game with no announced tip time', () => {
+  // ESPN's placeholder: midnight US Eastern on the day of the game (see services/espn).
+  const tbd = { tip: '2026-10-04T04:00Z', timeTBD: true, day: '2026-10-04' }
+  const real = { tip: '2026-10-04T23:00Z', timeTBD: false, day: null }
+
+  it('keeps its own day in a zone where the placeholder reads as yesterday', () => {
+    // Phoenix is UTC-7 all year, so 04:00Z is 9pm the PREVIOUS evening — the bug.
+    expect(dayKey(tbd.tip, 'America/Phoenix')).toBe('2026-10-03')
+    expect(gameDayKey(tbd, 'America/Phoenix')).toBe('2026-10-04')
+  })
+
+  it('still buckets an ordinary game in the reader\'s own zone', () => {
+    // The fix must not cost the hub its timezone bucketing: a late Eastern tip is still
+    // "tomorrow" for nobody and "today" for the user who sees it at 7pm.
+    expect(gameDayKey(real, 'America/New_York')).toBe('2026-10-04')
+    expect(gameDayKey(real, 'Pacific/Auckland')).toBe('2026-10-05')
+  })
+
+  it('says so instead of naming an hour', () => {
+    expect(gameTime(tbd, 'America/Phoenix')).toBe('Time TBD')
+    expect(gameTime(tbd, 'America/Phoenix', { short: true })).toBe('TBD')
+    expect(gameTime(real, 'America/New_York')).toBe('7:00 PM')
+    expect(gameTime(real, 'America/New_York', { short: true })).toBe('7:00 PM')
+  })
+
+  it('keeps the day exact on the next-up line and loses only the clock', () => {
+    expect(gameDayTime(tbd, 'America/Phoenix')).toBe('Sun, Oct 4 · time TBD')
+    expect(gameDayTime(real, 'America/New_York')).toBe('Sun, Oct 4 · 7:00 pm')
+  })
+
+  it('never prints an invented time anywhere on earth', () => {
+    for (const tz of ['America/Phoenix', 'America/Denver', 'America/New_York', 'Pacific/Auckland']) {
+      expect(gameTime(tbd, tz), tz).toBe('Time TBD')
+      expect(gameDayKey(tbd, tz), tz).toBe('2026-10-04')
+      expect(gameDayTime(tbd, tz), tz).toBe('Sun, Oct 4 · time TBD')
+    }
   })
 })

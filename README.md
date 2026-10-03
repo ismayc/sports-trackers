@@ -145,6 +145,16 @@ parts, not UTC), and renders:
   as two ~week ranges instead of one (`services/espn.js`).
 - **Preseason.** Exhibition games arrive in an ordinary date query and are dropped by
   `season.type === 1` — see the section above, and `isPreseason` in `services/espn.js`.
+- **Placeholder tip times.** A game whose start time has not been announced arrives with
+  `timeValid: false` and a `date` of **midnight US Eastern on the game's day** — a filler
+  instant, not a tip. Formatted like a real one it invents a precise time and, in any zone
+  west of Eastern, files the game on the day before: the WNBA semifinal of 2026-10-04
+  shipped as `2026-10-04T04:00Z` and read as "9:00 PM" on Oct 3 in Phoenix, for a game whose
+  own status line said `10/4 - TBD`. `normalize` carries the flag as `timeTBD` plus the
+  Eastern day as `day`, and every surface goes through `gameDayKey` / `gameTime` /
+  `gameDayTime` in `src/utils/time.js` so the day stays exact and only the clock reads
+  "Time TBD". Such a game also stays in the look-ahead for the whole of its day, since its
+  placeholder instant would otherwise mark it started from the early hours.
 - **International breaks.** A FIFA window empties the Premier League feed for two or three
   weeks. The gap is real data, not a fault, and the hub labels it from `breaks` in
   `src/data/viewers.js` rather than leaving an offseason-shaped hole — see the section above.

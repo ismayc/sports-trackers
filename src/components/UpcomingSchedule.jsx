@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { viewerById } from '../data/viewers.js'
 import { useFollow } from '../context/follow.jsx'
-import { dayKey, todayKey, formatDate, formatTime } from '../utils/time.js'
+import { todayKey, formatDayISO, gameDayKey, gameTime } from '../utils/time.js'
 import GameRow from './GameRow.jsx'
 
 // Deep link for one game. Every viewer reads ?game=<espn event id> and opens straight
@@ -61,11 +61,14 @@ export default function UpcomingSchedule({ feeds, tz, filtered = false, teamFilt
   }
   if (items.length === 0) return null
 
-  // Bucket by the day the game falls on in the user's zone, chronologically.
+  // Bucket by the day the game falls on in the user's zone, chronologically — except for a
+  // game with no announced tip time, which has no instant to read and is filed on the day
+  // the feed says (see gameDayKey). Both the list and the calendar grid below read `byDay`,
+  // so the two presentations cannot disagree about which day a game is on.
   const tKey = todayKey(tz)
   const byDay = new Map()
   for (const it of items) {
-    const key = dayKey(it.game.tip, tz)
+    const key = gameDayKey(it.game, tz)
     if (!byDay.has(key)) byDay.set(key, [])
     byDay.get(key).push(it)
   }
@@ -76,7 +79,7 @@ export default function UpcomingSchedule({ feeds, tz, filtered = false, teamFilt
     .sort(([a], [b]) => (a < b ? -1 : 1))
     .map(([key, games]) => ({
       key,
-      label: formatDate(games[0].game.tip, tz),
+      label: formatDayISO(key),
       isToday: key === tKey,
       games,
     }))
@@ -205,7 +208,7 @@ export default function UpcomingSchedule({ feeds, tz, filtered = false, teamFilt
                         <span className="up-cal-line">
                           {game.awayAbbr || game.away} @ {game.homeAbbr || game.home}
                         </span>
-                        <span className="up-cal-time">{formatTime(game.tip, tz)}</span>
+                        <span className="up-cal-time">{gameTime(game, tz, { short: true })}</span>
                       </a>
                     )
                   })}

@@ -1,6 +1,6 @@
 import GameRow from './GameRow.jsx'
 import TeamLogo from './TeamLogo.jsx'
-import { formatDayTime } from '../utils/time.js'
+import { gameDayTime } from '../utils/time.js'
 
 // One viewer's card. The whole card is a link into the deployed viewer (same tab, per
 // spec). Inside: the phase badge, a live indicator, and either today's games or the next
@@ -66,7 +66,7 @@ export default function ViewerCard({
             {filtered ? 'Next you can watch: ' : teamFiltered ? 'Next for your teams: ' : 'Next: '}
             <TeamLogo logo={next.awayLogo} size={14} />
             {next.awayShort || next.away} @ <TeamLogo logo={next.homeLogo} size={14} />
-            {next.homeShort || next.home}, {formatDayTime(next.tip, tz)}
+            {next.homeShort || next.home}, {gameDayTime(next, tz)}
             {net && <span className="card-net">{net}</span>}
           </div>
         ) : !feed.ok ? (

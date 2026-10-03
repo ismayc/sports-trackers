@@ -504,3 +504,76 @@ describe('fetchAllViewers', () => {
     expect(feeds[0].id).toBe('nba')
   })
 })
+
+describe('a tip time ESPN has not announced', () => {
+  // The real shape, from the WNBA semifinal of 2026-10-04: ESPN shipped
+  // date=2026-10-04T04:00Z with timeValid:false and a status line reading "10/4 - TBD".
+  // 04:00Z is midnight Eastern on the game's day — a placeholder, not a tip. Read as an
+  // instant it invents a time ("9:00 PM" in Phoenix) and files the game on the day BEFORE
+  // it is played, which is exactly what the viewers were showing.
+  const placeholder = (over = {}) =>
+    espnEvent({ date: '2026-10-04T04:00Z', timeValid: false, shortDetail: 'TBD', ...over })
+
+  const PHX = 'America/Phoenix' // UTC-7 all year: the zone the bug was spotted in.
+  const onOct3 = new Date('2026-10-03T19:00:00Z') // noon in Phoenix, the day before
+
+  it('marks the game TBD and keeps the placeholder out of the clock', async () => {
+    stubFetch([placeholder()])
+    const f = await fetchViewerDay(NBA, { now: onOct3, tz: PHX })
+    const g = f.upcoming[0]
+    expect(g.timeTBD).toBe(true)
+    // `tip` is still carried verbatim — the fix is that nothing formats it as a time.
+    expect(g.tip).toBe('2026-10-04T04:00Z')
+  })
+
+  it('files it on the day ESPN meant, not the day the placeholder falls on locally', async () => {
+    stubFetch([placeholder()])
+    const f = await fetchViewerDay(NBA, { now: onOct3, tz: PHX })
+    // Oct 4, the day of the game. Bucketing the instant in Phoenix would say Oct 3.
+    expect(f.upcoming[0].day).toBe('2026-10-04')
+    expect(f.today).toHaveLength(0)
+  })
+
+  it('puts it in TODAY on the day it is played, not the day before', async () => {
+    stubFetch([placeholder()])
+    const before = await fetchViewerDay(NBA, { now: onOct3, tz: PHX })
+    const during = await fetchViewerDay(NBA, { now: new Date('2026-10-04T19:00:00Z'), tz: PHX })
+    expect(before.today.map((g) => g.id)).toEqual([])
+    expect(during.today.map((g) => g.id)).toEqual(['1'])
+  })
+
+  it('keeps it in the look-ahead all through its own day', async () => {
+    // The trap: the placeholder instant is 00:00 Eastern, so by lunchtime on game day a
+    // `tip > now` test calls the game started and drops it from the two-week list — on the
+    // one day it matters most. It must survive its whole day.
+    stubFetch([placeholder()])
+    const gameDay = await fetchViewerDay(NBA, { now: new Date('2026-10-04T22:00:00Z'), tz: PHX })
+    expect(gameDay.upcoming.map((g) => g.id)).toEqual(['1'])
+    expect(gameDay.next?.id).toBe('1')
+  })
+
+  it('drops out of the look-ahead once its day has passed', async () => {
+    stubFetch([placeholder()])
+    const after = await fetchViewerDay(NBA, { now: new Date('2026-10-05T19:00:00Z'), tz: PHX })
+    expect(after.upcoming).toHaveLength(0)
+  })
+
+  it('leaves an ordinary game alone — only `timeValid: false` counts', async () => {
+    // A feed that omits timeValid is the normal case of a real time. Treating a missing
+    // field as TBD would blank the clock on every game in the hub.
+    stubFetch([espnEvent({ date: '2026-10-04T23:00Z' })])
+    const f = await fetchViewerDay(NBA, { now: onOct3, tz: PHX })
+    expect(f.upcoming[0].timeTBD).toBe(false)
+    expect(f.upcoming[0].day).toBeNull()
+    // And it is still bucketed in the USER'S zone, which is the whole point of dayKey.
+    expect(f.upcoming[0].tip).toBe('2026-10-04T23:00Z')
+  })
+
+  it('is independent of the reader\'s zone — the game date is the game date', async () => {
+    stubFetch([placeholder()])
+    for (const tz of ['America/Phoenix', 'America/New_York', 'Pacific/Auckland']) {
+      const f = await fetchViewerDay(NBA, { now: onOct3, tz })
+      expect(f.upcoming[0]?.day, tz).toBe('2026-10-04')
+    }
+  })
+})

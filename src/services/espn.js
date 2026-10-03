@@ -11,9 +11,15 @@
 // UTC `now` — the family's older ±1-around-UTC-now shape silently dropped the whole
 // "Yesterday" section for anyone west of UTC late in their day. Details on the function.
 
-import { addDayKey, dayKey, todayKey } from '../utils/time.js'
+import { addDayKey, dayKey, gameDayKey, todayKey } from '../utils/time.js'
 
 const BASE = 'https://site.web.api.espn.com/apis/site/v2/sports'
+
+// ESPN files the scoreboard by the US EASTERN day (verified against the live feed — see
+// DAYS_BACK below), and the placeholder instant it ships for a game with no announced tip
+// time is midnight in that same zone. So Eastern is the one zone in which a placeholder
+// reads back as the date ESPN meant by it.
+const ESPN_DAY_TZ = 'America/New_York'
 
 // National broadcast/stream names for a game. `broadcasts[].names` is the flat network
 // list; `geoBroadcasts[]` adds streamers and carries a market type — we keep National feeds
@@ -87,6 +93,17 @@ function normalize(ev, v) {
   const away = c.competitors?.find((t) => t.homeAway === 'away')
   if (!home || !away) return null
 
+  // IS THE TIP TIME REAL? `timeValid: false` is ESPN's "not announced yet", and the `date`
+  // it ships alongside is a placeholder — midnight US Eastern on the day of the game — not
+  // a tip. Rendered like any other instant it invents a precise time that nobody has
+  // announced, and west of Eastern it also files the game a day early: the WNBA semifinal
+  // of 2026-10-04 arrived as 2026-10-04T04:00Z and read as "9:00 PM" on Oct 3 in Phoenix,
+  // for a game whose status line said, in as many words, "10/4 - TBD".
+  //
+  // Only `=== false` counts. A feed that omits the field is the ordinary case of a real
+  // time, and must not be read as TBD.
+  const timeTBD = c.timeValid === false
+
   const st = c.status?.type || {}
   const num = (s) => {
     const n = Number(s)
@@ -117,6 +134,11 @@ function normalize(ev, v) {
     homeLogo: teamLogo(home.team),
     awayLogo: teamLogo(away.team),
     state: st.state || 'pre', // 'pre' | 'in' | 'post'
+    timeTBD, // true when `tip` is a placeholder, not a tip time (see above)
+    // The day ESPN filed this game on, for a TBD game only: the Eastern day of the
+    // placeholder, which IS the date ESPN meant. Null otherwise, because a real instant
+    // must keep being bucketed in the user's own zone. See `gameDayKey` in utils/time.
+    day: timeTBD ? dayKey(ev.date, ESPN_DAY_TZ) : null,
     // Is this a postseason game? ESPN's season.type: 3 is the postseason, 5 the NBA
     // play-in (which sits outside 3 in ESPN's numbering — see isPreseason). Both make
     // the hub's badge read "Playoffs". This is the only reliable regular-vs-postseason
@@ -197,12 +219,20 @@ export async function fetchViewerDay(v, { signal, now = new Date(), tz } = {}) {
   const all = [...byId.values()].sort((a, b) => new Date(a.tip) - new Date(b.tip))
   // `tKey` / `yKey` are the SAME keys the query window above was built from — that is the
   // whole point of the fix, so the days we ask for and the days we bucket into cannot drift.
-  const today = all.filter((g) => dayKey(g.tip, tz) === tKey)
+  const today = all.filter((g) => gameDayKey(g, tz) === tKey)
   const live = today.filter((g) => g.state === 'in').length
-  const yesterday = all.filter((g) => dayKey(g.tip, tz) === yKey)
+  const yesterday = all.filter((g) => gameDayKey(g, tz) === yKey)
   // Every not-yet-started game in the window, soonest first. `next` is the first of these;
   // the watch filter re-derives its own next from this list after dropping unwatchable games.
-  const upcoming = all.filter((g) => g.state === 'pre' && new Date(g.tip).getTime() > now.getTime())
+  //
+  // A TBD game cannot answer "has it started?" with its instant: the placeholder is midnight
+  // Eastern, so from the early hours of game day the game would test as already begun and
+  // vanish from the look-ahead on the very day it is played. Its day is all the feed gives,
+  // so it stays upcoming for the whole of that day.
+  const upcoming = all.filter((g) => {
+    if (g.state !== 'pre') return false
+    return g.timeTBD ? gameDayKey(g, tz) >= tKey : new Date(g.tip).getTime() > now.getTime()
+  })
   // "Playoffs" is a fact about the games actually on today, not a calendar guess: a
   // postseason game today (a live one is still in `today`) is the definitive signal.
   // Deliberately today-only — a look-ahead would light up "Playoffs" while the regular

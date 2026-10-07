@@ -286,6 +286,22 @@ describe('broadcast extraction', () => {
     expect(f.today[0].broadcast).toEqual(['TNT'])
   })
 
+  it('flags a game with no channel announced yet, and only that game', async () => {
+    // Live shapes from 2026-10-07: the Premier League's Oct 18 games had both lists empty
+    // (not announced); MIL @ WSH had only its home RSN (local-only, announced). Both leave
+    // `broadcast` empty; only the first is TBA.
+    stubFetch([
+      espnEvent({ id: 'tba', date: '2026-07-29T23:00Z' }),
+      espnEvent({ id: 'local', date: '2026-07-29T23:30Z', broadcasts: [{ market: 'home', names: ['MNMT'] }] }),
+      espnEvent({ id: 'geo', date: '2026-07-29T23:40Z', geoBroadcasts: [{ market: { type: 'Home' }, media: { shortName: 'MSG' } }] }),
+      espnEvent({ id: 'nat', date: '2026-07-29T23:50Z', broadcasts: [{ market: 'national', names: ['NBC'] }] }),
+    ])
+    const f = await run()
+    const tba = Object.fromEntries(f.today.map((g) => [g.id, g.broadcastTBA]))
+    expect(tba).toEqual({ tba: true, local: false, geo: false, nat: false })
+    expect(f.today.find((g) => g.id === 'local').broadcast).toEqual([])
+  })
+
   it('survives geoBroadcasts with no media name', async () => {
     stubFetch([espnEvent({ id: 'g', date: '2026-07-29T23:00Z', geoBroadcasts: [{ market: { type: 'National' }, media: {} }] })])
     const f = await run()

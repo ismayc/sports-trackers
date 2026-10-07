@@ -1086,6 +1086,13 @@ h2,
   padding: 1px 5px;
   white-space: nowrap;
 }
+/* A channel not announced yet: the same tag, dashed and unbolded, so it reads as a
+   placeholder rather than a network called "Channel TBA". */
+.row-net-tba,
+.card-net-tba {
+  font-weight: 400;
+  border-style: dashed;
+}
 
 .modal-backdrop {
   position: fixed;

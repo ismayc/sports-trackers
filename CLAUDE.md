@@ -61,6 +61,7 @@ Each is written up where it bites; this is the index.
 | Away-market RSNs treated as watchable; NBC games hidden from Peacock subscribers | — | `broadcastNames`; commit `83bd1e3` |
 | `/scoreboard/` logo variants are light-on-transparent — crests vanished on light backgrounds | 2026-08-17 | `teamLogo` in `services/espn.js` |
 | An international break read as an offseason, with no explanation on the page | 2026-09-21 | README "International breaks are named, not left blank" |
+| No channel announced read as "not on your services": the watch filter hid the PL's first weekend back from the break | 2026-10-06 | `broadcastTBA` in `services/espn.js` (both broadcast lists empty) |
 
 ## This repo is one of fourteen
 

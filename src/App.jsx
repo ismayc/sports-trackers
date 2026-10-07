@@ -29,9 +29,13 @@ const loadJson = (key, fallback) => {
 
 // Drop every game a viewer can't watch on the chosen services, and re-derive the counts and
 // the "next up" from what's left. Returns the feed unchanged when the filter is off.
+//
+// A game whose channel is not announced yet (`broadcastTBA`) is KEPT: unknown is not
+// unwatchable, and its row says "Channel TBA" (see GameRow). Dropping it hid a league's
+// whole weekend until ESPN filled in the channels (see `broadcastTBA` in services/espn).
 function applyWatchFilter(feed, services, on) {
   if (!on || !services.length) return feed
-  const keep = (g) => isWatchable(g.broadcast, services)
+  const keep = (g) => g.broadcastTBA || isWatchable(g.broadcast, services)
   const today = feed.today.filter(keep)
   const upcoming = (feed.upcoming || []).filter(keep)
   return {

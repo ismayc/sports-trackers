@@ -77,6 +77,19 @@ describe('GameRow', () => {
       const { container } = show({ broadcast: [] })
       expect(container.querySelector('.row-net')).toBeNull()
     })
+
+    it('says "Channel TBA" for an upcoming game with no channel announced', () => {
+      show({ broadcast: [], broadcastTBA: true })
+      expect(screen.getByText('Channel TBA')).toHaveClass('row-net', 'row-net-tba')
+    })
+
+    it('drops "Channel TBA" once the game has started or finished', () => {
+      for (const state of ['in', 'post']) {
+        const { container, unmount } = show({ broadcast: [], broadcastTBA: true, state })
+        expect(container.querySelector('.row-net')).toBeNull()
+        unmount()
+      }
+    })
   })
 
   describe('follow stars', () => {

@@ -66,6 +66,11 @@ describe('ViewerCard', () => {
     expect(container.querySelector('.card-net')).toBeNull()
   })
 
+  it('says "Channel TBA" when the next game has no channel announced', () => {
+    show(feed({ next: game({ broadcastTBA: true }) }))
+    expect(screen.getByText('Channel TBA')).toHaveClass('card-net', 'card-net-tba')
+  })
+
   it('says nothing is coming up when the two-week window is empty', () => {
     show(feed())
     expect(screen.getByText('No games in the next two weeks')).toBeInTheDocument()

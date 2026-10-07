@@ -59,7 +59,14 @@ export default function GameRow({ viewerId, game, tz, hideScores = false, names 
         <TeamStar viewerId={viewerId} abbr={homeAbbr} label={home} follow={follow} />
       </div>
       <span className="row-right">
-        {net && <span className="row-net" title={broadcast.join(', ')}>{net}</span>}
+        {net ? (
+          <span className="row-net" title={broadcast.join(', ')}>{net}</span>
+        ) : (
+          // Not yet announced, which is not the same as not on TV: an upcoming game with no
+          // channel listed at all says so, rather than looking like a local-only game.
+          game.broadcastTBA &&
+          state === 'pre' && <span className="row-net row-net-tba">Channel TBA</span>
+        )}
         {pill}
       </span>
     </div>

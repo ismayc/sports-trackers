@@ -400,6 +400,29 @@ describe('services + watch filter', () => {
     ).toBeInTheDocument()
   })
 
+  it('keeps a game whose channel is not announced yet, and still drops a local-only one', async () => {
+    // October 6, 2026: the Premier League's first weekend back from the break had no
+    // channels on ESPN until the evening, and "On my services" hid all of it.
+    fetchAllViewers.mockResolvedValue(
+      feedsFor({
+        nba: {
+          today: [],
+          upcoming: [
+            game({ id: 'tba', broadcast: [], broadcastTBA: true, awayShort: 'Leeds', homeShort: 'Arsenal' }),
+            game({ id: 'rsn', broadcast: [], broadcastTBA: false, awayShort: 'Bucks', homeShort: 'Wizards' }),
+          ],
+        },
+      })
+    )
+    localStorage.setItem('st:services', JSON.stringify(['peacock']))
+    localStorage.setItem('st:watchOnly', 'true')
+    show()
+    await settle()
+    expect(screen.getByText(/Next you can watch:/)).toHaveTextContent(/Leeds @ Arsenal/)
+    expect(screen.getAllByText('Channel TBA').length).toBeGreaterThan(0)
+    expect(screen.queryByText(/Bucks @ Wizards/)).not.toBeInTheDocument()
+  })
+
   it('counts live watchable games', async () => {
     fetchAllViewers.mockResolvedValue(
       feedsFor({ nba: { today: [game({ id: 'l', state: 'in', broadcast: ['ESPN'] })], live: 1 } })

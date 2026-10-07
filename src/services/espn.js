@@ -148,6 +148,13 @@ function normalize(ev, v) {
     score: hasScore ? [as, hs] : null, // [away, home] so it reads left-to-right as AWAY @ HOME
     statusLabel: st.shortDetail || st.detail || null, // "Q3 4:21", "Final", "7:00 PM"
     broadcast: broadcastNames(c), // national networks/streamers, for the watch filter
+    // No channel ANNOUNCED yet, as opposed to no NATIONAL channel. Both leave `broadcast`
+    // empty, and they mean opposite things to the watch filter. ESPN fills in channels
+    // about a week out: on 2026-10-06 the Premier League's first weekend back from the
+    // international break had nothing in either list until the evening, so "on my
+    // services" hid the whole weekend. A local-only game (MIL @ WSH on MNMT alone) has
+    // entries, just none national, and stays unwatchable. Only both lists empty is "TBA".
+    broadcastTBA: !(c.broadcasts?.length || c.geoBroadcasts?.length),
   }
 }
 

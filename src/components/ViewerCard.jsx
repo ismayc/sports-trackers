@@ -67,7 +67,11 @@ export default function ViewerCard({
             <TeamLogo logo={next.awayLogo} size={14} />
             {next.awayShort || next.away} @ <TeamLogo logo={next.homeLogo} size={14} />
             {next.homeShort || next.home}, {gameDayTime(next, tz)}
-            {net && <span className="card-net">{net}</span>}
+            {net ? (
+              <span className="card-net">{net}</span>
+            ) : (
+              next.broadcastTBA && <span className="card-net card-net-tba">Channel TBA</span>
+            )}
           </div>
         ) : !feed.ok ? (
           // A failed feed is not the same as an empty one — "no games" here would be

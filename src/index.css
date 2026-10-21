@@ -517,6 +517,14 @@ h2,
 .myteams-tag:hover {
   text-decoration: underline;
 }
+.myteams-sub {
+  font-size: 14px;
+  margin: 14px 0 8px;
+}
+.myteams-when {
+  font-weight: 400;
+  color: var(--text-dim);
+}
 
 /* ── Yesterday recap ────────────────────────────────────────────────── */
 .recap {

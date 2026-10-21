@@ -86,7 +86,9 @@ parts, not UTC), and renders:
 - a **card per viewer** — today's game count, a pulsing live indicator, the next upcoming
   game when nothing's on, and a season-phase badge (In season / Playoffs / Tournament /
   Starts in Nd / Offseason);
-- a **My teams** picker and a **My teams playing today** section. Pick your clubs sport by
+- a **My teams** picker and a **My teams playing today** section, with a **Next up** list
+  below it: the next game, with its date, of each followed team that does not play today
+  (within the two-week window). Pick your clubs sport by
   sport (searchable, with crests), or star them straight off any game row. The follow set is
   NOT the hub's own: every app in the family is served from `ismayc.github.io`, so the hub
   reads and writes each viewer's own key (`nba:followed`, `pl:followed`, …). A team picked

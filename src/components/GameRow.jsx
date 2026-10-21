@@ -4,7 +4,7 @@ import TeamLogo from './TeamLogo.jsx'
 
 // One compact game line: a star to follow either team, "AWAY @ HOME", and a right-aligned
 // score (live/final) or tip time (upcoming) with a state pill. Used inside a viewer card,
-// the "My teams playing today" section, and the yesterday/two-week breakdowns.
+// the "My teams" section (today and next up), and the yesterday/two-week breakdowns.
 // hideScores is the family's spoiler-free mode: the matchup and state stay, the numbers
 // go (a "Final" pill is not a spoiler; 105–102 is).
 //

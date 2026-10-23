@@ -15,7 +15,7 @@
 const ABC = 'ABC'
 const CBS = 'CBS'
 const NBC = 'NBC'
-const FOX = 'FOX'
+const FOX = 'Fox'
 const ESPN = 'ESPN'
 const ESPN2 = 'ESPN2'
 const ESPNU = 'ESPNU'
@@ -34,9 +34,15 @@ const CABLE_NETS = flat(ESPN, ESPN2, ESPNU, ESPNEWS, TNT, TBS, TRUTV, USA, ION, 
 const ALL_LINEAR = flat(BROADCAST_NETS, CABLE_NETS)
 
 // carries(...names) → matcher true when a game's broadcast list names any of them.
+//
+// CASE-INSENSITIVE, because ESPN changes the case of a network's name without notice. Until
+// October 5, 2026 it sent "FOX"; from that day's feed it sends "Fox". The exact match this
+// replaces then read every Fox game as on no service at all, so "on my services" hid the
+// whole Fox slate (the Rams' next three games among them) from a YouTube TV subscriber.
+const nameKey = (n) => String(n).toLowerCase()
 const carries = (...names) => {
-  const set = new Set(names.flat())
-  return (broadcast) => (broadcast || []).some((n) => set.has(n))
+  const set = new Set(names.flat().map(nameKey))
+  return (broadcast) => (broadcast || []).some((n) => set.has(nameKey(n)))
 }
 
 export const SERVICE_CATALOG = [

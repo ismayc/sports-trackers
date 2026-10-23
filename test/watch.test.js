@@ -50,6 +50,22 @@ describe('watchableServices', () => {
     expect(watchableServices(['ESPN'], ['youtubetv']).map((s) => s.key)).toEqual(['youtubetv'])
   })
 
+  // ESPN sends "Fox" since October 5, 2026 and sent "FOX" before. The hub's exact match
+  // read every Fox game as unwatchable on YouTube TV, so "on my services" hid them all.
+  it('matches a network whatever case ESPN spells it in', () => {
+    for (const name of ['Fox', 'FOX', 'fox']) {
+      expect(watchableServices([name], ['youtubetv', 'hulu', 'fubo', 'sling', 'cable']).map((s) => s.key)).toEqual([
+        'youtubetv',
+        'hulu',
+        'fubo',
+        'sling',
+        'cable',
+      ])
+    }
+    expect(isWatchable(['usa net'], ['youtubetv'])).toBe(true)
+    expect(isWatchable(['prime video'], ['prime'])).toBe(true)
+  })
+
   it('returns every selected service that carries the game, in catalog order', () => {
     const keys = watchableServices(['CBS'], ['fubo', 'paramount', 'youtubetv']).map((s) => s.key)
     // Catalog order puts the streamer (paramount) before the bundles.

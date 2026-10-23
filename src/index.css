@@ -1101,6 +1101,21 @@ h2,
   font-weight: 400;
   border-style: dashed;
 }
+/* A series game that may not be played: the accent color, so it reads as a fact about
+   the game, not about the channel. */
+.row-ifnec,
+.card-ifnec {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  border: 1px dashed var(--accent);
+  border-radius: 2px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+.card-ifnec {
+  margin-left: 8px;
+}
 
 .modal-backdrop {
   position: fixed;

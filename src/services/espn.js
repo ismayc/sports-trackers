@@ -145,6 +145,12 @@ function normalize(ev, v) {
     // signal: the calendar can't tell them apart where they share a month (the WNBA
     // regular season runs into late September, its playoffs start after).
     postseason: [3, 5].includes(ev.season?.type),
+    // A series game that is played only if the series is still open by then. ESPN has no
+    // field for it: the one signal is the competition headline, "WNBA Finals - Game 6 If
+    // Necessary" (checked against the live 2026 Finals on 2026-10-23, where Games 6 and 7
+    // carried it and the certain Game 5 did not). ESPN drops such a game from the feed once
+    // the series ends without it, so the flag never outlives the question.
+    ifNecessary: (c.notes || []).some((n) => /\bif necessary\b/i.test(n.headline || '')),
     score: hasScore ? [as, hs] : null, // [away, home] so it reads left-to-right as AWAY @ HOME
     statusLabel: st.shortDetail || st.detail || null, // "Q3 4:21", "Final", "7:00 PM"
     broadcast: broadcastNames(c), // national networks/streamers, for the watch filter

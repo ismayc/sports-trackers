@@ -71,6 +71,16 @@ describe('ViewerCard', () => {
     expect(screen.getByText('Channel TBA')).toHaveClass('card-net', 'card-net-tba')
   })
 
+  it('marks the next game "If necessary" when the series may end first', () => {
+    show(feed({ next: game({ ifNecessary: true }) }))
+    expect(screen.getByText('If necessary')).toHaveClass('card-ifnec')
+  })
+
+  it('does not mark an ordinary next game', () => {
+    show(feed({ next: game() }))
+    expect(screen.queryByText('If necessary')).not.toBeInTheDocument()
+  })
+
   it('says nothing is coming up when the two-week window is empty', () => {
     show(feed())
     expect(screen.getByText('No games in the next two weeks')).toBeInTheDocument()

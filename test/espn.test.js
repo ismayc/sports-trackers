@@ -77,6 +77,27 @@ describe('postseason flag', () => {
     expect(f.postseason).toBe(true)
   })
 
+  // The headlines are the live 2026 WNBA Finals' own (2026-10-23). Game 5 was certain
+  // with the series at 2-1, and ESPN did not mark it; Games 6 and 7 it did.
+  it('marks a game ESPN headlines "If Necessary", and only that game', async () => {
+    stubFetch([
+      espnEvent({ id: 'g5', date: '2026-07-29T23:00Z', seasonType: 3, headline: 'WNBA Finals - Game 5' }),
+      espnEvent({ id: 'g6', date: '2026-07-29T23:30Z', seasonType: 3, headline: 'WNBA Finals - Game 6 If Necessary' }),
+      espnEvent({ id: 'reg', date: '2026-07-29T23:45Z', seasonType: 2 }),
+    ])
+    const f = await run()
+    const flag = Object.fromEntries(f.today.map((g) => [g.id, g.ifNecessary]))
+    expect(flag).toEqual({ g5: false, g6: true, reg: false })
+  })
+
+  it('reads a note with no headline as not "if necessary"', async () => {
+    const ev = espnEvent({ id: 'bare', date: '2026-07-29T23:00Z', seasonType: 3 })
+    ev.competitions[0].notes = [{ type: 'event' }]
+    stubFetch([ev])
+    const f = await run()
+    expect(f.today[0].ifNecessary).toBe(false)
+  })
+
   it('counts the NBA play-in (type 5) as postseason', async () => {
     stubFetch([espnEvent({ id: 'pi', date: '2026-07-29T23:00Z', seasonType: 5 })])
     const f = await run()

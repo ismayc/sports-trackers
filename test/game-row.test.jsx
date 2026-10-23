@@ -26,6 +26,16 @@ describe('GameRow', () => {
     expect(screen.queryByText(/\d:\d\d (AM|PM)/)).not.toBeInTheDocument()
   })
 
+  it('marks an upcoming "if necessary" series game', () => {
+    show({ ifNecessary: true })
+    expect(screen.getByText('If necessary')).toHaveClass('row-ifnec')
+  })
+
+  it('drops the mark once the game is live or final, since it was necessary', () => {
+    show({ ifNecessary: true, state: 'in', score: [50, 48], statusLabel: 'Q3 4:21' })
+    expect(screen.queryByText('If necessary')).not.toBeInTheDocument()
+  })
+
   it('renders a live game with the score and the status pill', () => {
     show({ state: 'in', score: [55, 60], statusLabel: 'Q3 4:21' })
     expect(screen.getByText('AWY 55 @ HME 60')).toBeInTheDocument()

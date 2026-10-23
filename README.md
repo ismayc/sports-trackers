@@ -105,7 +105,10 @@ parts, not UTC), and renders:
   tagged with the sport it comes from, in the family's two presentations: a day-grouped
   **Schedule** list and a calendar **Week** grid (Sunday-start weeks over the horizon,
   today outlined, out-of-range days dimmed), toggled by tabs and remembered per device.
-  It respects both selections below, so it always agrees with the cards;
+  It respects both selections below, so it always agrees with the cards. A playoff
+  game that is played only if the series is still open carries an **If necessary** tag,
+  read from ESPN's headline ("WNBA Finals - Game 6 If Necessary"), the feed's only
+  signal for it; the tag also shows on game rows and a card's next game;
 - **Sports** and **My services** pickers — choose which viewers to show, and optionally
   filter everything (cards, my-teams, the two-week breakdown) down to games on the
   streaming/TV services you actually have. Stacks with the my-teams filter, and the page

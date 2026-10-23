@@ -67,6 +67,7 @@ export default function ViewerCard({
             <TeamLogo logo={next.awayLogo} size={14} />
             {next.awayShort || next.away} @ <TeamLogo logo={next.homeLogo} size={14} />
             {next.homeShort || next.home}, {gameDayTime(next, tz)}
+            {next.ifNecessary && <span className="card-ifnec">If necessary</span>}
             {net ? (
               <span className="card-net">{net}</span>
             ) : (

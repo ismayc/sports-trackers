@@ -59,6 +59,8 @@ export default function GameRow({ viewerId, game, tz, hideScores = false, names 
         <TeamStar viewerId={viewerId} abbr={homeAbbr} label={home} follow={follow} />
       </div>
       <span className="row-right">
+        {/* Only while it is still a question: a played or live game was necessary. */}
+        {game.ifNecessary && state === 'pre' && <span className="row-ifnec">If necessary</span>}
         {net ? (
           <span className="row-net" title={broadcast.join(', ')}>{net}</span>
         ) : (

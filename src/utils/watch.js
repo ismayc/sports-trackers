@@ -27,10 +27,14 @@ const USA = ['USA', 'USA Net']
 const ION = 'ION'
 const NBATV = 'NBA TV'
 const NFLNET = ['NFL Network', 'NFL Net']
+// NBC Sports' cable channel, relaunched November 17, 2025: NBA "Peacock NBA Monday"
+// games (31 in 2026-27) and some Premier League matches. Carried by YouTube TV, Fubo,
+// and cable; Hulu + Live TV and Sling listed no carriage as of November 1, 2026.
+const NBCSN = 'NBCSN'
 
 const flat = (...xs) => xs.flat()
 const BROADCAST_NETS = flat(ABC, CBS, NBC, FOX) // the free over-the-air four
-const CABLE_NETS = flat(ESPN, ESPN2, ESPNU, ESPNEWS, TNT, TBS, TRUTV, USA, ION, NBATV, NFLNET)
+const CABLE_NETS = flat(ESPN, ESPN2, ESPNU, ESPNEWS, TNT, TBS, TRUTV, USA, ION, NBATV, NFLNET, NBCSN)
 const ALL_LINEAR = flat(BROADCAST_NETS, CABLE_NETS)
 
 // carries(...names) → matcher true when a game's broadcast list names any of them.
@@ -51,7 +55,10 @@ export const SERVICE_CATALOG = [
   // live on Peacock, but ESPN tags those games only "NBC". USA Network is NOT added: since
   // NBCUniversal spun its cable channels off into Versant (late 2025) they no longer stream
   // live on Peacock, only a next-day replay. (USA still reaches you through a bundle below.)
-  { key: 'peacock', label: 'Peacock', kind: 'stream', match: carries('Peacock', NBC) },
+  // NBCSN IS added: "All NBA games presented by NBC Sports will stream live on Peacock"
+  // (NBC Sports' 2026-27 schedule release), and ESPN tags the NBCSN Premier League
+  // matches with "Peacock" too.
+  { key: 'peacock', label: 'Peacock', kind: 'stream', match: carries('Peacock', NBC, NBCSN) },
   { key: 'paramount', label: 'Paramount+', kind: 'stream', match: carries('Paramount+', CBS) },
   { key: 'max', label: 'Max', kind: 'stream', match: carries('Max', 'HBO Max', TNT, TBS, TRUTV) },
   { key: 'prime', label: 'Prime Video', kind: 'stream', match: carries('Prime Video') },
@@ -62,7 +69,7 @@ export const SERVICE_CATALOG = [
   // Live-TV bundles, defined by the linear networks they carry.
   { key: 'youtubetv', label: 'YouTube TV', kind: 'bundle', match: carries(ALL_LINEAR) },
   { key: 'hulu', label: 'Hulu + Live TV', kind: 'bundle', match: carries(BROADCAST_NETS, ESPN, ESPN2, ESPNU, TNT, TBS, TRUTV, USA, NBATV, NFLNET) },
-  { key: 'fubo', label: 'Fubo', kind: 'bundle', match: carries(BROADCAST_NETS, ESPN, ESPN2, ESPNU, USA, TNT, TBS, TRUTV, ION, NBATV, NFLNET) },
+  { key: 'fubo', label: 'Fubo', kind: 'bundle', match: carries(BROADCAST_NETS, ESPN, ESPN2, ESPNU, USA, TNT, TBS, TRUTV, ION, NBATV, NFLNET, NBCSN) },
   { key: 'sling', label: 'Sling TV', kind: 'bundle', match: carries(ESPN, ESPN2, TNT, TBS, TRUTV, USA, NBC, FOX, NBATV, NFLNET) },
   { key: 'cable', label: 'Cable / Satellite', kind: 'bundle', match: carries(ALL_LINEAR) },
 ]

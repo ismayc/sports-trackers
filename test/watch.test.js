@@ -38,6 +38,19 @@ describe('watchableServices', () => {
     expect(watchableServices(['NBC'], ['peacock']).map((s) => s.key)).toEqual(['peacock'])
   })
 
+  it('counts an NBCSN game as watchable on Peacock and on the bundles that carry NBCSN', () => {
+    // NBC Sports: every NBA game it presents streams live on Peacock; ESPN tags the
+    // Monday games only "NBCSN". YouTube TV, Fubo, and cable carry the channel; Hulu
+    // and Sling listed no carriage as of November 1, 2026.
+    const keys = ['peacock', 'youtubetv', 'hulu', 'fubo', 'sling', 'cable']
+    expect(watchableServices(['NBCSN'], keys).map((s) => s.key)).toEqual([
+      'peacock',
+      'youtubetv',
+      'fubo',
+      'cable',
+    ])
+  })
+
   it('does not count a USA Network (Versant) game as watchable on Peacock', () => {
     // Post-Versant, USA games no longer stream live on Peacock; a bundle carries them instead.
     for (const net of ['USA', 'USA Net']) {

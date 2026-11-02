@@ -1295,3 +1295,10 @@ summary:focus-visible,
   min-width: 0;
   overflow-wrap: break-word;
 }
+
+/* A small phone: the label and its count need two lines, not a 4px spill (November 2, 2026). */
+@media (max-width: 360px) {
+  .archived-summary {
+    flex-wrap: wrap;
+  }
+}

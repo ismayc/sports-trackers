@@ -742,7 +742,7 @@ describe('footer', () => {
     show()
     await settle()
     expect(screen.getByRole('link', { name: 'ismayc' })).toHaveAttribute('href', 'https://github.com/ismayc')
-    expect(screen.getByRole('link', { name: 'Chester Ismay' })).toHaveAttribute('href', 'https://chester.rbind.io')
+    expect(screen.getByRole('link', { name: 'Chester Ismay' })).toHaveAttribute('href', 'https://chesterismay.com')
   })
 })
 

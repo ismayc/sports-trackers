@@ -18,26 +18,29 @@ tournaments**, hidden by default.
 | 🏈 NFL | [nfl-schedule](https://ismayc.github.io/nfl-schedule/) | Sep–Feb |
 | 🏀 NBA | [nba-schedule](https://ismayc.github.io/nba-schedule/) | Oct–Jun |
 
-Archived — `ARCHIVED_VIEWERS` in `src/data/viewers.js`, never fetched, collapsed by default,
-ordered soonest-to-return:
+Archived — derived from `ALL_VIEWERS` in `src/data/viewers.js` (see `isArchived`), never
+fetched, collapsed by default, ordered soonest-to-return:
 
 | Tournament | Viewer | Edition | Returns |
 |---|---|---|---|
 | 🏀 Men's March Madness | [mens-march-madness](https://ismayc.github.io/mens-march-madness/) | 2026 | **2027** |
 | 🏀 Women's March Madness | [womens-march-madness](https://ismayc.github.io/womens-march-madness/) | 2026 | **2027** |
+| 🏀 FIBA Men's World Cup | [fiba-mens-world-cup-viewer](https://ismayc.github.io/fiba-mens-world-cup-viewer/) | 2023 | 2027 |
 | ⚽ Women's World Cup | [womens-world-cup-viewer](https://ismayc.github.io/womens-world-cup-viewer/) | 2023 | 2027 |
 | ⚽ Euros | [football-euros-viewer](https://ismayc.github.io/football-euros-viewer/) | 2024 | 2028 |
 | ⚽ Copa América | [copa-america-viewer](https://ismayc.github.io/copa-america-viewer/) | 2024 | 2028 |
 | ⚽ World Cup | [world-cup-viewer](https://ismayc.github.io/world-cup-viewer/) | 2026 | 2030 |
+| 🏀 FIBA Women's World Cup | [fiba-womens-world-cup-viewer](https://ismayc.github.io/fiba-womens-world-cup-viewer/) | 2026 | 2030 |
 
-Archived viewers **keep their fetch config** (`espnPath`, `window`, and March Madness's
-`mmHeadline`), so reviving one is a straight move of the object back into `VIEWERS` — the data
-alone therefore can't tell you they aren't fetched, which is why `test/app.test.jsx` asserts
-that the feed loader only ever receives the live list.
+A tournament moves to the Completed shelf automatically the day after its `runs.end`, and
+`nextEdition` orders the shelf. Archived viewers **keep their fetch config** (`espnPath` and
+March Madness's `mmHeadline`). Reviving one is a manual step: update its `runs`, `edition`,
+and `nextEdition` to the new dates.
 
-⚠️ **The two March Madness viewers are annual**, unlike the quadrennial four: archiving them
-means **the hub will not surface their games in March 2027** until one is moved back into
-`VIEWERS`. That is a deliberate trade, recorded here so it isn't a surprise next spring.
+⚠️ **The two March Madness viewers are annual**, unlike the quadrennial tournaments: once their
+edition ends they archive, so **the hub will not surface their games in March 2027** until
+their `runs`, `edition`, and `nextEdition` are advanced to the new year. That is a deliberate
+trade, recorded here so it isn't a surprise next spring.
 
 ## Preseason is ignored, by choice
 
@@ -165,7 +168,7 @@ parts, not UTC), and renders:
   `src/data/viewers.js` rather than leaving an offseason-shaped hole — see the section above.
 - **Graceful offseason.** An empty or unreachable feed never throws — the card falls back
   to its season-phase badge. That is also why a finished quadrennial tournament belongs in
-  `ARCHIVED_VIEWERS` rather than the grid: its feed is reachable but empty for years, so a
+  the archived shelf rather than the grid: its feed is reachable but empty for years, so a
   live tile would be a permanent "Offseason" card costing a network round-trip per load.
 
 ## Develop
@@ -180,7 +183,7 @@ npm run test:watch      # watch mode
 npm run coverage:badge  # tests + coverage, and refresh the badge endpoint
 ```
 
-**Tests: 335 across 19 files, at 100% statements, branches, functions and lines.** Unlike
+**The suite is held at 100% statements, branches, functions and lines.** Unlike
 the sibling viewers — which round the statement figure for their badge — this repo is
 literally 100% on every metric, and the two places that made that awkward were fixed rather
 than excused: an unreachable `?? 0` in the card sort was removed in favour of a test pinning

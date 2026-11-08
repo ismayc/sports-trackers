@@ -21,6 +21,9 @@
 // "Starts in Nd" countdown are both exact.
 //
 // `espnPath` slots into: site.web.api.espn.com/apis/site/v2/sports/{espnPath}/scoreboard
+// `feedUrl` replaces `espnPath` for a viewer ESPN does not carry (Unrivaled): a JSON file
+//   its own build publishes on this origin, read by services/feed.js. A viewer has one or
+//   the other, never both.
 // `college: true` viewers get &groups=50&seasontype=3 appended AND the March-Madness
 //   headline filter applied (see services/espn.js), because the seasontype=3 window also
 //   carries NIT / Crown / WBIT games, which are NOT the tournament. Without `mmHeadline` those
@@ -126,6 +129,25 @@ const ALL_VIEWERS = [
       { start: '2026-11-09', end: '2026-11-20', resumes: '2026-11-21' },
       { start: '2027-03-21', end: '2027-03-30' },
     ],
+  },
+  {
+    id: 'unrivaled',
+    name: 'Unrivaled',
+    emoji: '🏀',
+    // NOT ON ESPN, the one viewer that is not. The league publishes no feed and its site
+    // sends no CORS headers, so the viewer's own refresh scrapes it and commits the season,
+    // and its build publishes that season as `hub-feed.json` on this same origin (see
+    // the-unrivaled-schedule's src/utils/hubFeed.js). services/feed.js reads it in place of
+    // a scoreboard. It carries no live scores: a result appears once the viewer's refresh
+    // commits it, every 30 minutes on game nights.
+    feedUrl: 'https://ismayc.github.io/unrivaled-schedule/hub-feed.json',
+    url: 'https://ismayc.github.io/unrivaled-schedule/',
+    // No calendarHost yet: the Netlify site that serves its webcal feed is not linked.
+    followKey: 'unr:followed',
+    kind: 'league',
+    // January to March, within one calendar year: the 2027 season opens January 8 in Boston.
+    // There is no ESPN season type, so "Playoffs" comes from the feed's own `postseason`.
+    season: { startMonth: 1, startDay: 8, endMonth: 3 },
   },
   {
     id: 'fiba-wwc',

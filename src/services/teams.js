@@ -19,6 +19,8 @@
 // cached in localStorage for a week. A field changes about once a season, and the cache also
 // means the picker still opens with a usable list when ESPN is unreachable.
 
+import { feedTeams, fetchFeed } from './feed.js'
+
 const BASE = 'https://site.web.api.espn.com/apis/v2/sports'
 const CACHE_KEY = 'st:teams'
 const TTL_MS = 7 * 24 * 60 * 60 * 1000
@@ -68,6 +70,12 @@ const writeCache = (next) => {
   }
 }
 
+async function fetchStandingsTeams(v, signal) {
+  const res = await fetch(`${BASE}/${v.espnPath}/standings?level=3`, { signal })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return parseTeams(await res.json())
+}
+
 // Load every viewer's catalog at once, cache-first. Returns { [viewerId]: [{abbr,name,…}] }
 // and NEVER rejects: a league whose request fails comes back as its cached list if there is
 // one, else an empty array, which the picker renders as its own small "couldn't load" note
@@ -85,9 +93,8 @@ export async function fetchTeams(viewers, { signal, now = Date.now() } = {}) {
         return
       }
       try {
-        const res = await fetch(`${BASE}/${v.espnPath}/standings?level=3`, { signal })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const teams = parseTeams(await res.json())
+        // A viewer ESPN does not carry lists its clubs in its own committed feed.
+        const teams = v.feedUrl ? feedTeams(await fetchFeed(v, { signal })) : await fetchStandingsTeams(v, signal)
         // An empty list is a bad answer, not a real one: no live league has zero teams.
         // Treat it like a failure so a stale-but-real cache is preferred over nothing.
         if (teams.length === 0) throw new Error('empty catalog')

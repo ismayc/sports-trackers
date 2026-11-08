@@ -7,9 +7,10 @@ A one-page "home base" for Chester Ismay's family of sports viewers. It answers 
 question at a glance: **which of my sports have games today?** — and deep-links into each
 viewer for the details.
 
-It fronts **four live viewers** — every one an ongoing league — in a single 4-across row
-(two on a tablet, one per row on a phone), plus a **collapsed shelf of completed
-tournaments**, hidden by default.
+It fronts **five live viewers**, every one an ongoing league, in a grid that fits as many
+cards across as the width allows (two on a tablet, one per row on a phone; a league with
+nothing in the next two weeks recesses to a one-line dormant row), plus a **collapsed shelf
+of completed tournaments**, hidden by default.
 
 | Sport | Viewer | Season |
 |---|---|---|
@@ -17,6 +18,13 @@ tournaments**, hidden by default.
 | ⚽ Premier League | [premier-league](https://ismayc.github.io/premier-league/) | Aug–May |
 | 🏈 NFL | [nfl-schedule](https://ismayc.github.io/nfl-schedule/) | Sep–Feb |
 | 🏀 NBA | [nba-schedule](https://ismayc.github.io/nba-schedule/) | Oct–Jun |
+| 🏀 Unrivaled | [unrivaled-schedule](https://ismayc.github.io/unrivaled-schedule/) | Jan–Mar |
+
+**Unrivaled is the one viewer not read from ESPN**, which does not carry the 3-on-3 league.
+Its own build publishes the committed season as `hub-feed.json` on this same origin, and
+`src/services/feed.js` reads that in place of a scoreboard, clipped to the same two-week
+window. It has no live scores: a game is upcoming until the viewer's refresh commits its
+final (every 30 minutes on game nights), and the hub never shows it as live.
 
 Archived — derived from `ALL_VIEWERS` in `src/data/viewers.js` (see `isArchived`), never
 fetched, collapsed by default, ordered soonest-to-return:

@@ -56,6 +56,7 @@ describe('viewer registry', () => {
       worldcup: 'wc2026:followed',
       'fiba-wwc': 'fwwc:followed',
       'fiba-mwc': 'fmwc:followed',
+      unrivaled: 'unr:followed',
     })
     const keys = ALL.map((v) => v.followKey)
     expect(new Set(keys).size).toBe(keys.length)
@@ -69,9 +70,11 @@ describe('viewer registry', () => {
 })
 
 describe('viewer shape', () => {
-  it('all declare an espnPath and a shape the phase badge can read', () => {
+  it('all declare exactly one source and a shape the phase badge can read', () => {
     for (const v of ALL) {
-      expect(v.espnPath, v.id).toBeTruthy()
+      // An ESPN path, or (for a league ESPN does not carry) a same-origin committed feed.
+      expect(Boolean(v.espnPath) !== Boolean(v.feedUrl), `${v.id} needs espnPath or feedUrl, not both`).toBe(true)
+      if (v.feedUrl) expect(new URL(v.feedUrl).origin, v.id).toBe('https://ismayc.github.io')
       expect(['league', 'tournament']).toContain(v.kind)
       if (v.kind === 'league') {
         expect(v.season, v.id).toBeTruthy()
@@ -121,13 +124,13 @@ describe('auto-archive by end date', () => {
     }
   })
 
-  it('the live set is the four leagues plus a tournament being played', () => {
+  it('the live set is the five leagues plus a tournament being played', () => {
     // On 2026-09-10 the FIBA Women's World Cup is on; every other tournament has ended.
     expect(liveViewers(DURING).map((v) => v.id).sort()).toEqual(
-      ['epl', 'fiba-wwc', 'nba', 'nfl', 'wnba'].sort()
+      ['epl', 'fiba-wwc', 'nba', 'nfl', 'unrivaled', 'wnba'].sort()
     )
-    // The day after its Final, the live set falls back to the four ongoing leagues.
-    expect(liveViewers(AFTER).map((v) => v.id).sort()).toEqual(['epl', 'nba', 'nfl', 'wnba'].sort())
+    // The day after its Final, the live set falls back to the five ongoing leagues.
+    expect(liveViewers(AFTER).map((v) => v.id).sort()).toEqual(['epl', 'nba', 'nfl', 'unrivaled', 'wnba'].sort())
   })
 
   it('the archived shelf holds every completed tournament, soonest-returning first', () => {

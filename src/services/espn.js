@@ -12,6 +12,7 @@
 // "Yesterday" section for anyone west of UTC late in their day. Details on the function.
 
 import { addDayKey, dayKey, gameDayKey, todayKey } from '../utils/time.js'
+import { fetchFeedGames } from './feed.js'
 
 const BASE = 'https://site.web.api.espn.com/apis/site/v2/sports'
 
@@ -191,16 +192,36 @@ const HORIZON_DAYS = 14
 const DAYS_BACK = 2
 
 export async function fetchViewerDay(v, { signal, now = new Date(), tz } = {}) {
+  // Anchored on the user's OWN today, not on UTC now.
+  const tKey = todayKey(tz, now)
+  const yKey = addDayKey(tKey, -1)
+
+  // A viewer ESPN does not carry reads its committed feed instead (services/feed.js). The
+  // feed holds the whole season, so it is clipped to the window the scoreboard queries
+  // cover (DAYS_BACK through HORIZON_DAYS, by the user's own day): every consumer of
+  // `upcoming` is written for a two-week look-ahead, not a season. Bucketing is shared, so
+  // both sources answer "today", "yesterday", and "next" the same way.
+  if (v.feedUrl) {
+    const lo = addDayKey(tKey, -DAYS_BACK)
+    const hi = addDayKey(tKey, HORIZON_DAYS)
+    const { ok, games } = await fetchFeedGames(v, { signal })
+    const inWindow = games.filter((g) => {
+      const k = gameDayKey(g, tz)
+      return k >= lo && k <= hi
+    })
+    return bucket(v, inWindow, { anyOk: ok, tKey, yKey, tz, now })
+  }
+  const { ok, games } = await fetchEspnGames(v, { signal, tKey })
+  return bucket(v, games, { anyOk: ok, tKey, yKey, tz, now })
+}
+
+async function fetchEspnGames(v, { signal, tKey }) {
   // One SINGLE-day query per day across the whole window: 2 days back (for yesterday, see
   // DAYS_BACK above) through the 14-day look-ahead horizon. ESPN dropped multi-day `dates=A-B`
   // range queries in September 2026 (they now 400 across every league), so the old approach of
   // a couple of forward ranges silently returned nothing past tomorrow and the two-week
   // breakdown collapsed to ~2 days. Single days are also each well under the scoreboard's
-  // silent event cap, so a dense league's day is never thinned. Anchored on the user's OWN
-  // today, not on UTC now.
-  const tKey = todayKey(tz, now)
-  const yKey = addDayKey(tKey, -1)
-
+  // silent event cap, so a dense league's day is never thinned.
   const compact = (key) => key.replace(/-/g, '')
   const queries = []
   for (let d = -DAYS_BACK; d <= HORIZON_DAYS; d++) queries.push(compact(addDayKey(tKey, d)))
@@ -228,8 +249,12 @@ export async function fetchViewerDay(v, { signal, now = new Date(), tz } = {}) {
       if (g) byId.set(g.id, g)
     }
   }
+  return { ok: anyOk, games: [...byId.values()] }
+}
 
-  const all = [...byId.values()].sort((a, b) => new Date(a.tip) - new Date(b.tip))
+// Sort one viewer's games and split them into the buckets the cards render.
+function bucket(v, games, { anyOk, tKey, yKey, tz, now }) {
+  const all = [...games].sort((a, b) => new Date(a.tip) - new Date(b.tip))
   // `tKey` / `yKey` are the SAME keys the query window above was built from — that is the
   // whole point of the fix, so the days we ask for and the days we bucket into cannot drift.
   const today = all.filter((g) => gameDayKey(g, tz) === tKey)

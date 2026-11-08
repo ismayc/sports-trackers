@@ -142,7 +142,8 @@ const ALL_VIEWERS = [
     // commits it, every 30 minutes on game nights.
     feedUrl: 'https://ismayc.github.io/unrivaled-schedule/hub-feed.json',
     url: 'https://ismayc.github.io/unrivaled-schedule/',
-    // No calendarHost yet: the Netlify site that serves its webcal feed is not linked.
+    // Linked November 8, 2026 (Netlify's GitHub integration, like the siblings).
+    calendarHost: 'the-unrivaled-schedule.netlify.app',
     followKey: 'unr:followed',
     kind: 'league',
     // January to March, within one calendar year: the 2027 season opens January 8 in Boston.
